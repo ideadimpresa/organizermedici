@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
-import { addHours } from "date-fns";
+import { addDays, endOfDay, startOfDay } from "date-fns";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail, appointmentReminderEmail } from "@/lib/email";
 
 /**
- * Sends 24h-ahead email reminders for confirmed appointments.
- * Triggered hourly by Vercel Cron (see vercel.json), protected by CRON_SECRET.
+ * Sends email reminders for confirmed appointments happening "tomorrow".
+ * Triggered once a day by Vercel Cron (see vercel.json) — Vercel's Hobby plan
+ * only allows daily cron jobs, so this covers the whole next calendar day
+ * rather than a rolling 24h window, protected by CRON_SECRET.
  */
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -14,9 +16,9 @@ export async function GET(request: Request) {
   }
 
   const admin = createAdminClient();
-  const now = new Date();
-  const windowStart = addHours(now, 23);
-  const windowEnd = addHours(now, 25);
+  const tomorrow = addDays(new Date(), 1);
+  const windowStart = startOfDay(tomorrow);
+  const windowEnd = endOfDay(tomorrow);
 
   const { data: appointments } = await admin
     .from("appointments")
