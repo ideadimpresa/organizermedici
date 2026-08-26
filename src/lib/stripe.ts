@@ -1,19 +1,19 @@
 import Stripe from "stripe";
+import { getPlatformSettings } from "@/lib/settings";
 
-let stripeSingleton: Stripe | null = null;
-
-export function getStripe() {
-  if (!stripeSingleton) {
-    if (!process.env.STRIPE_SECRET_KEY) {
-      throw new Error("STRIPE_SECRET_KEY non configurata");
-    }
-    stripeSingleton = new Stripe(process.env.STRIPE_SECRET_KEY);
+/**
+ * Stripe client built from platform_settings (configured by the superadmin
+ * in /admin/impostazioni), falling back to env vars if not configured there.
+ */
+export async function getStripe(): Promise<Stripe> {
+  const settings = await getPlatformSettings();
+  if (!settings.stripeSecretKey) {
+    throw new Error("Stripe non configurato: imposta la chiave segreta in /admin/impostazioni");
   }
-  return stripeSingleton;
+  return new Stripe(settings.stripeSecretKey);
 }
 
-/** Prezzo Stripe (Price ID) per l'abbonamento SaaS del dottore, per piano. */
-export const DOCTOR_PLAN_PRICE_IDS: Record<"starter" | "pro", string | undefined> = {
-  starter: process.env.STRIPE_PRICE_STARTER,
-  pro: process.env.STRIPE_PRICE_PRO,
-};
+export async function getDoctorPlanPriceIds(): Promise<Record<"starter" | "pro", string | null>> {
+  const settings = await getPlatformSettings();
+  return { starter: settings.stripePriceStarter, pro: settings.stripePricePro };
+}

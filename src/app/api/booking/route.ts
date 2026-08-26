@@ -6,6 +6,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { bookingSchema } from "@/lib/validations/booking";
 import { sendEmail, appointmentConfirmationEmail } from "@/lib/email";
 import { getStripe } from "@/lib/stripe";
+import { getPlatformSettings } from "@/lib/settings";
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -97,7 +98,8 @@ export async function POST(request: Request) {
   }
 
   const meetingLink = mode === "online" ? `https://meet.jit.si/visitaup-${randomUUID()}` : null;
-  const requiresPayment = service.price_cents > 0 && !!process.env.STRIPE_SECRET_KEY;
+  const platformSettings = await getPlatformSettings();
+  const requiresPayment = service.price_cents > 0 && !!platformSettings.stripeSecretKey;
 
   const { data: appointment, error: appointmentError } = await admin
     .from("appointments")
@@ -122,7 +124,7 @@ export async function POST(request: Request) {
   }
 
   if (requiresPayment) {
-    const stripe = getStripe();
+    const stripe = await getStripe();
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       customer_email: patient.email,

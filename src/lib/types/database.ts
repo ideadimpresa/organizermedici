@@ -303,6 +303,25 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["reminders_log"]["Row"]>;
         Relationships: [];
       };
+      platform_settings: {
+        Row: {
+          id: boolean;
+          email_provider: "resend" | "brevo";
+          email_from_name: string;
+          email_from_address: string | null;
+          resend_api_key_encrypted: string | null;
+          brevo_api_key_encrypted: string | null;
+          stripe_publishable_key: string | null;
+          stripe_price_starter: string | null;
+          stripe_price_pro: string | null;
+          stripe_secret_key_encrypted: string | null;
+          stripe_webhook_secret_encrypted: string | null;
+          updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["platform_settings"]["Row"]>;
+        Update: Partial<Database["public"]["Tables"]["platform_settings"]["Row"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

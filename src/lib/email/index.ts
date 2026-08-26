@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { getPlatformSettings } from "@/lib/settings";
 
 export interface SendEmailInput {
   to: string;
@@ -6,32 +7,29 @@ export interface SendEmailInput {
   html: string;
 }
 
-async function sendViaResend({ to, subject, html }: SendEmailInput) {
-  const resend = new Resend(process.env.RESEND_API_KEY);
+async function sendViaResend(input: SendEmailInput, apiKey: string, fromName: string, fromAddress: string) {
+  const resend = new Resend(apiKey);
   const { error } = await resend.emails.send({
-    from: process.env.EMAIL_FROM || "VisitaUp <no-reply@visitaup.it>",
-    to,
-    subject,
-    html,
+    from: `${fromName} <${fromAddress}>`,
+    to: input.to,
+    subject: input.subject,
+    html: input.html,
   });
   if (error) throw new Error(`Resend error: ${error.message}`);
 }
 
-async function sendViaBrevo({ to, subject, html }: SendEmailInput) {
+async function sendViaBrevo(input: SendEmailInput, apiKey: string, fromName: string, fromAddress: string) {
   const res = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "api-key": process.env.BREVO_API_KEY!,
+      "api-key": apiKey,
     },
     body: JSON.stringify({
-      sender: {
-        email: process.env.EMAIL_FROM_ADDRESS || "no-reply@visitaup.it",
-        name: process.env.EMAIL_FROM_NAME || "VisitaUp",
-      },
-      to: [{ email: to }],
-      subject,
-      htmlContent: html,
+      sender: { email: fromAddress, name: fromName },
+      to: [{ email: input.to }],
+      subject: input.subject,
+      htmlContent: input.html,
     }),
   });
   if (!res.ok) {
@@ -41,19 +39,27 @@ async function sendViaBrevo({ to, subject, html }: SendEmailInput) {
 }
 
 /**
- * Provider-agnostic transactional email sender.
- * Set EMAIL_PROVIDER=resend|brevo in env. Defaults to resend.
+ * Provider-agnostic transactional email sender. Reads provider + credentials
+ * from platform_settings (configured by the superadmin in /admin/impostazioni),
+ * falling back to env vars if not yet configured there.
  */
 export async function sendEmail(input: SendEmailInput) {
-  const provider = (process.env.EMAIL_PROVIDER || "resend").toLowerCase();
+  const settings = await getPlatformSettings();
+  const fromAddress = settings.emailFromAddress || "no-reply@visitaup.it";
 
-  if (process.env.NODE_ENV !== "production" && !process.env.RESEND_API_KEY && !process.env.BREVO_API_KEY) {
-    console.warn("[email] Nessun provider email configurato, email non inviata:", input.subject, "->", input.to);
-    return;
+  if (settings.emailProvider === "brevo") {
+    if (!settings.brevoApiKey) {
+      console.warn("[email] Brevo non configurato, email non inviata:", input.subject, "->", input.to);
+      return;
+    }
+    return sendViaBrevo(input, settings.brevoApiKey, settings.emailFromName, fromAddress);
   }
 
-  if (provider === "brevo") return sendViaBrevo(input);
-  return sendViaResend(input);
+  if (!settings.resendApiKey) {
+    console.warn("[email] Resend non configurato, email non inviata:", input.subject, "->", input.to);
+    return;
+  }
+  return sendViaResend(input, settings.resendApiKey, settings.emailFromName, fromAddress);
 }
 
 export function appointmentConfirmationEmail(params: {

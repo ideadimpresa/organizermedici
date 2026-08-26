@@ -6,6 +6,9 @@ import { logout } from "@/app/(auth)/actions";
 const NAV = [
   { href: "/admin", label: "Panoramica" },
   { href: "/admin/dottori", label: "Dottori" },
+  { href: "/admin/agenda", label: "Agenda (tutti)" },
+  { href: "/admin/pazienti", label: "Pazienti (tutti)" },
+  { href: "/admin/impostazioni", label: "Impostazioni" },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

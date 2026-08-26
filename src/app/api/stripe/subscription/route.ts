@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getStripe, DOCTOR_PLAN_PRICE_IDS } from "@/lib/stripe";
+import { getStripe, getDoctorPlanPriceIds } from "@/lib/stripe";
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
@@ -10,7 +10,8 @@ export async function POST(request: Request) {
   }
 
   const { plan } = (await request.json()) as { plan: "starter" | "pro" };
-  const priceId = DOCTOR_PLAN_PRICE_IDS[plan];
+  const priceIds = await getDoctorPlanPriceIds();
+  const priceId = priceIds[plan];
   if (!priceId) {
     return NextResponse.json({ error: "Piano non configurato" }, { status: 400 });
   }
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
   const { data: doctor } = await admin.from("doctors").select("*").eq("id", user.doctorId).single();
   if (!doctor) return NextResponse.json({ error: "Profilo non trovato" }, { status: 404 });
 
-  const stripe = getStripe();
+  const stripe = await getStripe();
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     customer: doctor.stripe_customer_id || undefined,

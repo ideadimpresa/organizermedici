@@ -3,15 +3,21 @@ import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail, appointmentConfirmationEmail } from "@/lib/email";
+import { getPlatformSettings } from "@/lib/settings";
 
 export async function POST(request: Request) {
-  const stripe = getStripe();
+  const stripe = await getStripe();
+  const settings = await getPlatformSettings();
   const signature = request.headers.get("stripe-signature");
   const body = await request.text();
 
+  if (!settings.stripeWebhookSecret) {
+    return NextResponse.json({ error: "Webhook secret non configurato" }, { status: 500 });
+  }
+
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(body, signature!, process.env.STRIPE_WEBHOOK_SECRET!);
+    event = stripe.webhooks.constructEvent(body, signature!, settings.stripeWebhookSecret);
   } catch (err) {
     const message = err instanceof Error ? err.message : "invalid signature";
     return NextResponse.json({ error: `Webhook signature error: ${message}` }, { status: 400 });
