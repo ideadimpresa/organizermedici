@@ -3,6 +3,7 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/session";
 import { logout } from "@/app/(auth)/actions";
+import { DashboardMobileNav } from "@/components/dashboard-mobile-nav";
 
 const NAV = [
   { href: "/dottore/agenda", label: "Agenda" },
@@ -45,15 +46,8 @@ export default async function DoctorLayout({ children }: { children: React.React
         </form>
       </aside>
       <div className="flex-1 bg-background">
-        <header className="flex items-center justify-between border-b border-border bg-white px-6 py-4 md:hidden">
-          <Link href="/">
-            <Image src="/logo-full.png" alt="VisitaUp" width={130} height={30} className="h-7 w-auto" />
-          </Link>
-          <form action={logout}>
-            <button className="text-sm text-secondary">Esci</button>
-          </form>
-        </header>
-        <main className="p-6">{children}</main>
+        <DashboardMobileNav nav={NAV} logoutAction={logout} />
+        <main className="p-4 md:p-6">{children}</main>
       </div>
     </div>
   );

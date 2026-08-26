@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Nunito_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -16,6 +16,17 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "VisitaUp — Prenota il tuo nutrizionista",
   description: "Gestione agenda, pazienti e prenotazioni online per professionisti della nutrizione.",
+  appleWebApp: {
+    capable: true,
+    title: "VisitaUp",
+    statusBarStyle: "black-translucent",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#16324F",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

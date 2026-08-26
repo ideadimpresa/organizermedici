@@ -3,6 +3,7 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/session";
 import { logout } from "@/app/(auth)/actions";
+import { DashboardMobileNav } from "@/components/dashboard-mobile-nav";
 
 const NAV = [
   { href: "/admin", label: "Panoramica" },
@@ -42,7 +43,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <button className="text-sm text-white/50 hover:text-white">Esci</button>
         </form>
       </aside>
-      <main className="flex-1 bg-background p-6">{children}</main>
+      <div className="flex-1 bg-background">
+        <DashboardMobileNav nav={NAV} logoutAction={logout} badge="admin" />
+        <main className="p-4 md:p-6">{children}</main>
+      </div>
     </div>
   );
 }

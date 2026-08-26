@@ -20,7 +20,7 @@ export default async function HomePage() {
             Agenda online, consulenze in studio o a distanza, promemoria automatici.
             Tutto in un&apos;unica piattaforma pensata per professionisti della nutrizione.
           </p>
-          <div className="mt-8 flex justify-center gap-3">
+          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
             <Link
               href="/dottori"
               className="rounded-button bg-brand px-6 py-3 font-semibold text-white hover:bg-brand-dark"

@@ -28,7 +28,7 @@ export default async function AdminPatientsPage({
         pazienti: questi dati non vanno condivisi con terzi al di fuori dell&apos;erogazione del servizio.
       </p>
 
-      <form className="mt-4 flex gap-2" method="get">
+      <form className="mt-4 flex flex-wrap gap-2" method="get">
         <select
           name="doctorId"
           defaultValue={doctorId || ""}

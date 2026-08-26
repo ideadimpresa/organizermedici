@@ -35,7 +35,7 @@ export default async function AdminAgendaPage({
         Vista di sola supervisione. La gestione (conferma/annulla) resta nell&apos;agenda del singolo dottore.
       </p>
 
-      <form className="mt-4 flex gap-2" method="get">
+      <form className="mt-4 flex flex-wrap gap-2" method="get">
         <select
           name="doctorId"
           defaultValue={doctorId || ""}
