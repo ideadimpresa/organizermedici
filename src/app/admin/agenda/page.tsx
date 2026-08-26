@@ -31,7 +31,7 @@ export default async function AdminAgendaPage({
   return (
     <div>
       <h1 className="text-2xl font-bold">Agenda — tutti i dottori</h1>
-      <p className="mt-1 text-black/60">
+      <p className="mt-1 text-secondary">
         Vista di sola supervisione. La gestione (conferma/annulla) resta nell&apos;agenda del singolo dottore.
       </p>
 
@@ -39,7 +39,7 @@ export default async function AdminAgendaPage({
         <select
           name="doctorId"
           defaultValue={doctorId || ""}
-          className="rounded-lg border border-black/20 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+          className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none"
         >
           <option value="">Tutti i dottori</option>
           {(doctors || []).map((d) => (
@@ -48,12 +48,12 @@ export default async function AdminAgendaPage({
             </option>
           ))}
         </select>
-        <button className="rounded-lg border border-black/20 px-4 py-2 text-sm hover:bg-black/5">Filtra</button>
+        <button className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-surface-hover">Filtra</button>
       </form>
 
-      <div className="mt-6 overflow-x-auto rounded-xl border border-black/10 bg-white">
+      <div className="mt-6 overflow-x-auto rounded-xl border border-border bg-white">
         <table className="w-full text-sm">
-          <thead className="border-b border-black/10 bg-black/[0.02] text-left text-black/50">
+          <thead className="border-b border-border bg-background text-left text-secondary">
             <tr>
               <th className="px-4 py-3 font-medium">Data</th>
               <th className="px-4 py-3 font-medium">Dottore</th>
@@ -65,18 +65,18 @@ export default async function AdminAgendaPage({
           </thead>
           <tbody>
             {(appointments || []).map((a) => (
-              <tr key={a.id} className="border-b border-black/5 last:border-0">
+              <tr key={a.id} className="border-b border-border last:border-0">
                 <td className="px-4 py-3">{new Date(a.starts_at).toLocaleString("it-IT", { dateStyle: "medium", timeStyle: "short" })}</td>
                 <td className="px-4 py-3">{(a.doctors as unknown as { display_name: string })?.display_name}</td>
                 <td className="px-4 py-3">{(a.patients as unknown as { full_name: string })?.full_name}</td>
-                <td className="px-4 py-3 text-black/60">{(a.services as unknown as { name: string })?.name}</td>
-                <td className="px-4 py-3 text-black/60">{a.mode === "online" ? "Online" : "In studio"}</td>
-                <td className="px-4 py-3 text-black/60">{STATUS_LABEL[a.status]}</td>
+                <td className="px-4 py-3 text-secondary">{(a.services as unknown as { name: string })?.name}</td>
+                <td className="px-4 py-3 text-secondary">{a.mode === "online" ? "Online" : "In studio"}</td>
+                <td className="px-4 py-3 text-secondary">{STATUS_LABEL[a.status]}</td>
               </tr>
             ))}
             {(!appointments || appointments.length === 0) && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-black/50">
+                <td colSpan={6} className="px-4 py-8 text-center text-secondary">
                   Nessun appuntamento trovato.
                 </td>
               </tr>

@@ -12,11 +12,11 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_COLOR: Record<string, string> = {
-  pending: "bg-amber-100 text-amber-700",
-  confirmed: "bg-green-100 text-green-700",
-  cancelled: "bg-red-100 text-red-700",
-  completed: "bg-black/10 text-black/60",
-  no_show: "bg-red-100 text-red-700",
+  pending: "bg-warning-light text-warning",
+  confirmed: "bg-success-light text-success",
+  cancelled: "bg-error-light text-error",
+  completed: "bg-border text-secondary",
+  no_show: "bg-error-light text-error",
 };
 
 export default async function AgendaPage() {
@@ -45,26 +45,26 @@ export default async function AgendaPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold">Agenda</h1>
-      <p className="mt-1 text-black/60">I tuoi prossimi appuntamenti</p>
+      <p className="mt-1 text-secondary">I tuoi prossimi appuntamenti</p>
 
       <div className="mt-6 space-y-8">
         {grouped.size === 0 && (
-          <p className="rounded-xl border border-dashed border-black/20 bg-white p-8 text-center text-black/50">
+          <p className="rounded-xl border border-dashed border-border bg-white p-8 text-center text-secondary">
             Nessun appuntamento in programma.
           </p>
         )}
         {Array.from(grouped.entries()).map(([day, appts]) => (
           <div key={day}>
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-black/50">{day}</h2>
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-secondary">{day}</h2>
             <div className="space-y-3">
               {(appts || []).map((appt) => (
-                <div key={appt.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-black/10 bg-white p-4 shadow-sm">
+                <div key={appt.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-white p-4 shadow-sm">
                   <div>
                     <p className="font-medium">
                       {new Date(appt.starts_at).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })} ·{" "}
                       {(appt.patients as unknown as { full_name: string })?.full_name}
                     </p>
-                    <p className="text-sm text-black/60">
+                    <p className="text-sm text-secondary">
                       {(appt.services as unknown as { name: string })?.name} ·{" "}
                       {appt.mode === "online" ? "Consulenza online" : "In studio"}
                     </p>

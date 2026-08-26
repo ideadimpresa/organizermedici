@@ -11,7 +11,7 @@ export function ServiceRowActions({ id, isActive }: { id: string; isActive: bool
       <button
         disabled={isPending}
         onClick={() => startTransition(() => toggleService(id, !isActive))}
-        className="rounded-full border border-black/20 px-3 py-1 font-medium hover:bg-black/5 disabled:opacity-50"
+        className="rounded-button border border-border px-3 py-1 font-semibold hover:bg-surface-hover disabled:opacity-50"
       >
         {isActive ? "Disattiva" : "Attiva"}
       </button>
@@ -20,7 +20,7 @@ export function ServiceRowActions({ id, isActive }: { id: string; isActive: bool
         onClick={() => {
           if (confirm("Eliminare questa prestazione?")) startTransition(() => deleteService(id));
         }}
-        className="rounded-full border border-red-200 px-3 py-1 font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+        className="rounded-button border border-error/30 px-3 py-1 font-semibold text-error hover:bg-error-light disabled:opacity-50"
       >
         Elimina
       </button>

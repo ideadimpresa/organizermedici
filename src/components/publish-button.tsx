@@ -9,7 +9,7 @@ export function PublishButton({ articleId }: { articleId: string }) {
     <button
       disabled={isPending}
       onClick={() => startTransition(() => publishArticle(articleId))}
-      className="rounded-full bg-brand px-3 py-1 text-xs font-medium text-white hover:bg-brand-dark disabled:opacity-50"
+      className="rounded-button bg-brand px-3 py-1 text-xs font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
     >
       {isPending ? "Pubblicazione…" : "Pubblica"}
     </button>

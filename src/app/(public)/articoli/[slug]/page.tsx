@@ -21,7 +21,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
         {doctor.display_name}
       </Link>
       <h1 className="mt-2 text-3xl font-bold">{article.title}</h1>
-      <p className="mt-4 whitespace-pre-line text-black/80">{article.content}</p>
+      <p className="mt-4 whitespace-pre-line text-foreground">{article.content}</p>
     </article>
   );
 }

@@ -8,10 +8,10 @@ export async function SiteHeader() {
     user?.role === "superadmin" ? "/admin" : user?.role === "doctor" || user?.role === "staff" ? "/dottore/agenda" : "/area-personale";
 
   return (
-    <header className="border-b border-black/10 bg-white">
+    <header className="border-b border-border bg-white">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-        <Link href="/" className="text-xl font-bold text-brand">
-          VisitaUp
+        <Link href="/" className="text-xl font-bold text-navy">
+          Visita<span className="text-teal">Up</span>
         </Link>
         <nav className="flex items-center gap-4 text-sm">
           <Link href="/dottori" className="hidden sm:inline hover:text-brand">
@@ -20,7 +20,7 @@ export async function SiteHeader() {
           {user ? (
             <Link
               href={dashboardHref}
-              className="rounded-full bg-brand px-4 py-2 font-medium text-white hover:bg-brand-dark"
+              className="rounded-button bg-brand px-4 py-2 font-semibold text-white hover:bg-brand-dark"
             >
               La mia area
             </Link>
@@ -31,7 +31,7 @@ export async function SiteHeader() {
               </Link>
               <Link
                 href="/registrati"
-                className="rounded-full bg-brand px-4 py-2 font-medium text-white hover:bg-brand-dark"
+                className="rounded-button bg-brand px-4 py-2 font-semibold text-white hover:bg-brand-dark"
               >
                 Registrati
               </Link>

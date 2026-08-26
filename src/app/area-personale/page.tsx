@@ -23,7 +23,7 @@ export default async function PatientAreaPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">I miei appuntamenti</h1>
         <form action={logout}>
-          <button className="text-sm text-black/50 hover:text-black">Esci</button>
+          <button className="text-sm text-secondary hover:text-foreground">Esci</button>
         </form>
       </div>
 
@@ -32,11 +32,11 @@ export default async function PatientAreaPage() {
           const doctor = a.doctors as unknown as { display_name: string; slug: string };
           const service = a.services as unknown as { name: string } | null;
           return (
-            <div key={a.id} className="rounded-xl border border-black/10 bg-white p-4">
+            <div key={a.id} className="rounded-xl border border-border bg-white p-4">
               <p className="font-medium">
                 {new Date(a.starts_at).toLocaleString("it-IT", { dateStyle: "full", timeStyle: "short" })}
               </p>
-              <p className="text-sm text-black/60">
+              <p className="text-sm text-secondary">
                 {doctor.display_name} · {service?.name} · {a.mode === "online" ? "Online" : "In studio"}
               </p>
               {a.mode === "online" && a.meeting_link && (
@@ -48,7 +48,7 @@ export default async function PatientAreaPage() {
           );
         })}
         {(!appointments || appointments.length === 0) && (
-          <p className="rounded-xl border border-dashed border-black/20 bg-white p-8 text-center text-black/50">
+          <p className="rounded-xl border border-dashed border-border bg-white p-8 text-center text-secondary">
             Nessun appuntamento prenotato.{" "}
             <Link href="/dottori" className="text-brand hover:underline">
               Trova un nutrizionista

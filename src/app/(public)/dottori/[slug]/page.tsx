@@ -18,14 +18,14 @@ export default async function DoctorProfilePage({ params }: { params: Promise<{ 
     <div className="mx-auto max-w-6xl px-4 py-10">
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-border bg-white p-6 shadow-sm">
             <div className="flex items-start gap-4">
               <div className="h-20 w-20 shrink-0 rounded-full bg-brand-light" />
               <div>
                 <h1 className="text-xl font-bold">{doctor.display_name}</h1>
-                <p className="text-black/60">{doctor.title}</p>
+                <p className="text-secondary">{doctor.title}</p>
                 {addresses && addresses[0] && (
-                  <p className="mt-1 text-sm text-black/50">
+                  <p className="mt-1 text-sm text-secondary">
                     {addresses[0].city} · {addresses.length} indirizzo{addresses.length > 1 ? "i" : ""}
                   </p>
                 )}
@@ -35,7 +35,7 @@ export default async function DoctorProfilePage({ params }: { params: Promise<{ 
             {doctor.bio && (
               <div className="mt-6">
                 <h2 className="font-semibold">Esperienze</h2>
-                <p className="mt-2 whitespace-pre-line text-sm text-black/70">{doctor.bio}</p>
+                <p className="mt-2 whitespace-pre-line text-sm text-foreground">{doctor.bio}</p>
               </div>
             )}
 

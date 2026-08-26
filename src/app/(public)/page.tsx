@@ -13,23 +13,23 @@ export default async function HomePage() {
     <div>
       <section className="bg-brand-light/40">
         <div className="mx-auto max-w-6xl px-4 py-16 text-center">
-          <h1 className="text-4xl font-bold text-brand-dark sm:text-5xl">
+          <h1 className="text-4xl font-bold text-navy sm:text-5xl">
             Prenota il tuo nutrizionista, quando vuoi
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-black/70">
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-foreground">
             Agenda online, consulenze in studio o a distanza, promemoria automatici.
             Tutto in un&apos;unica piattaforma pensata per professionisti della nutrizione.
           </p>
           <div className="mt-8 flex justify-center gap-3">
             <Link
               href="/dottori"
-              className="rounded-full bg-brand px-6 py-3 font-medium text-white hover:bg-brand-dark"
+              className="rounded-button bg-brand px-6 py-3 font-semibold text-white hover:bg-brand-dark"
             >
               Trova un nutrizionista
             </Link>
             <Link
               href="/per-professionisti"
-              className="rounded-full border border-brand px-6 py-3 font-medium text-brand hover:bg-white"
+              className="rounded-button border border-brand px-6 py-3 font-semibold text-brand hover:bg-white"
             >
               Sei un professionista? Scoprilo
             </Link>
@@ -45,15 +45,15 @@ export default async function HomePage() {
               <Link
                 key={d.slug}
                 href={`/dottori/${d.slug}`}
-                className="rounded-xl border border-black/10 bg-white p-5 shadow-sm transition hover:shadow-md"
+                className="rounded-xl border border-border bg-white p-5 shadow-sm transition hover:shadow-md"
               >
                 <div className="h-12 w-12 rounded-full bg-brand-light" />
                 <h3 className="mt-3 font-semibold">{d.display_name}</h3>
-                <p className="text-sm text-black/60">{d.title}</p>
+                <p className="text-sm text-secondary">{d.title}</p>
               </Link>
             ))
           ) : (
-            <p className="text-black/60">Nessun profilo pubblicato ancora. Torna presto!</p>
+            <p className="text-secondary">Nessun profilo pubblicato ancora. Torna presto!</p>
           )}
         </div>
       </section>

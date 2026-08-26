@@ -18,18 +18,18 @@ export default async function DoctorsDirectoryPage() {
             <Link
               key={d.slug}
               href={`/dottori/${d.slug}`}
-              className="flex items-start gap-4 rounded-xl border border-black/10 bg-white p-5 shadow-sm hover:shadow-md"
+              className="flex items-start gap-4 rounded-xl border border-border bg-white p-5 shadow-sm hover:shadow-md"
             >
               <div className="h-16 w-16 shrink-0 rounded-full bg-brand-light" />
               <div>
                 <h2 className="font-semibold">{d.display_name}</h2>
-                <p className="text-sm text-black/60">{d.title}</p>
-                {d.bio && <p className="mt-1 line-clamp-2 text-sm text-black/70">{d.bio}</p>}
+                <p className="text-sm text-secondary">{d.title}</p>
+                {d.bio && <p className="mt-1 line-clamp-2 text-sm text-foreground">{d.bio}</p>}
               </div>
             </Link>
           ))
         ) : (
-          <p className="text-black/60">Nessun professionista disponibile al momento.</p>
+          <p className="text-secondary">Nessun professionista disponibile al momento.</p>
         )}
       </div>
     </div>

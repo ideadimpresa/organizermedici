@@ -79,9 +79,9 @@ export default function ImportPatientsPage() {
           Torna alla lista
         </Link>
       </div>
-      <p className="mt-1 text-black/60">Carica un file CSV esportato dal tuo gestionale, Excel o Google Contacts.</p>
+      <p className="mt-1 text-secondary">Carica un file CSV esportato dal tuo gestionale, Excel o Google Contacts.</p>
 
-      <div className="mt-6 rounded-xl border border-black/10 bg-white p-6">
+      <div className="mt-6 rounded-xl border border-border bg-white p-6">
         <input
           type="file"
           accept=".csv"
@@ -92,17 +92,17 @@ export default function ImportPatientsPage() {
         {headers.length > 0 && (
           <div className="mt-6">
             <h2 className="font-semibold">Associa le colonne</h2>
-            <p className="text-sm text-black/50">Trovate {rows.length} righe nel file.</p>
+            <p className="text-sm text-secondary">Trovate {rows.length} righe nel file.</p>
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
               {TARGET_FIELDS.map((target) => (
                 <div key={target.key}>
                   <label className="block text-sm font-medium">
-                    {target.label} {target.required && <span className="text-red-500">*</span>}
+                    {target.label} {target.required && <span className="text-error">*</span>}
                   </label>
                   <select
                     value={mapping[target.key] || ""}
                     onChange={(e) => setMapping({ ...mapping, [target.key]: e.target.value })}
-                    className="mt-1 w-full rounded-lg border border-black/20 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none"
                   >
                     <option value="">— non importare —</option>
                     {headers.map((h) => (
@@ -118,7 +118,7 @@ export default function ImportPatientsPage() {
             <button
               onClick={handleImport}
               disabled={submitting}
-              className="mt-6 rounded-full bg-brand px-6 py-2.5 text-sm font-medium text-white hover:bg-brand-dark disabled:opacity-50"
+              className="mt-6 rounded-button bg-brand px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
             >
               {submitting ? "Importazione in corso…" : `Importa ${rows.length} pazienti`}
             </button>
@@ -126,7 +126,7 @@ export default function ImportPatientsPage() {
         )}
 
         {status && (
-          <p className={`mt-4 rounded-lg px-4 py-2 text-sm ${status.ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+          <p className={`mt-4 rounded-lg px-4 py-2 text-sm ${status.ok ? "bg-success-light text-success" : "bg-error-light text-error"}`}>
             {status.message}
           </p>
         )}

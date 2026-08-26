@@ -22,7 +22,7 @@ export function SubscribeButton({ plan, label }: { plan: "starter" | "pro"; labe
     <button
       onClick={handleClick}
       disabled={loading}
-      className="w-full rounded-full bg-brand py-2.5 text-sm font-medium text-white hover:bg-brand-dark disabled:opacity-50"
+      className="w-full rounded-button bg-brand py-2.5 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
     >
       {loading ? "Attendere…" : label}
     </button>

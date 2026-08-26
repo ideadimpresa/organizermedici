@@ -104,22 +104,22 @@ export function BookingWidget({
   }
 
   return (
-    <div className="rounded-2xl border border-black/10 bg-white shadow-sm">
+    <div className="rounded-2xl border border-border bg-white shadow-sm">
       <div className="rounded-t-2xl bg-brand px-6 py-4 text-white">
         <h3 className="font-semibold">Prenota una visita</h3>
         <p className="text-sm text-white/80">e consulta {doctorName} nel modo che preferisci</p>
       </div>
 
-      <div className="flex border-b border-black/10">
+      <div className="flex border-b border-border">
         <button
           onClick={() => setTab("studio")}
-          className={`flex-1 py-3 text-sm font-medium ${tab === "studio" ? "border-b-2 border-brand text-brand" : "text-black/50"}`}
+          className={`flex-1 py-3 text-sm font-medium ${tab === "studio" ? "border-b-2 border-brand text-brand" : "text-secondary"}`}
         >
           Visita in studio
         </button>
         <button
           onClick={() => setTab("online")}
-          className={`flex-1 py-3 text-sm font-medium ${tab === "online" ? "border-b-2 border-brand text-brand" : "text-black/50"}`}
+          className={`flex-1 py-3 text-sm font-medium ${tab === "online" ? "border-b-2 border-brand text-brand" : "text-secondary"}`}
         >
           Consulenza online
         </button>
@@ -127,8 +127,8 @@ export function BookingWidget({
 
       <div className="p-6">
         {tab === "studio" && addresses[0] && (
-          <p className="mb-4 text-sm text-black/60">
-            <span className="font-medium text-black">Indirizzo:</span> {addresses[0].address_line}, {addresses[0].city}
+          <p className="mb-4 text-sm text-secondary">
+            <span className="font-medium text-foreground">Indirizzo:</span> {addresses[0].address_line}, {addresses[0].city}
           </p>
         )}
 
@@ -136,7 +136,7 @@ export function BookingWidget({
         <select
           value={effectiveServiceId}
           onChange={(e) => setServiceId(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-black/20 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+          className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none"
         >
           {availableServices.length === 0 && <option value="">Nessuna prestazione disponibile</option>}
           {availableServices.map((s) => (
@@ -148,12 +148,12 @@ export function BookingWidget({
 
         <div className="mt-5">
           {loadingSlots ? (
-            <p className="text-sm text-black/50">Caricamento disponibilità…</p>
+            <p className="text-sm text-secondary">Caricamento disponibilità…</p>
           ) : (
             <div className="grid grid-cols-4 gap-2">
               {days.map((day) => (
                 <div key={day.date} className="text-center">
-                  <p className="mb-2 text-xs font-medium text-black/60">
+                  <p className="mb-2 text-xs font-medium text-secondary">
                     {new Date(day.date).toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short" })}
                   </p>
                   <div className="flex flex-col gap-1.5">
@@ -170,17 +170,17 @@ export function BookingWidget({
                         {new Date(slot.start).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}
                       </button>
                     ))}
-                    {day.slots.length === 0 && <span className="text-xs text-black/30">—</span>}
+                    {day.slots.length === 0 && <span className="text-xs text-muted">—</span>}
                   </div>
                 </div>
               ))}
-              {days.length === 0 && <p className="col-span-4 text-sm text-black/50">Nessuna disponibilità configurata.</p>}
+              {days.length === 0 && <p className="col-span-4 text-sm text-secondary">Nessuna disponibilità configurata.</p>}
             </div>
           )}
         </div>
 
         {selectedSlot && (
-          <div className="mt-6 space-y-3 border-t border-black/10 pt-5">
+          <div className="mt-6 space-y-3 border-t border-border pt-5">
             <p className="text-sm font-medium">
               Slot selezionato:{" "}
               {new Date(selectedSlot.start).toLocaleString("it-IT", {
@@ -195,25 +195,25 @@ export function BookingWidget({
               placeholder="Nome e cognome"
               value={form.fullName}
               onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-              className="w-full rounded-lg border border-black/20 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none"
             />
             <input
               placeholder="Email"
               type="email"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="w-full rounded-lg border border-black/20 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none"
             />
             <input
               placeholder="Telefono (opzionale)"
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              className="w-full rounded-lg border border-black/20 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none"
             />
             <button
               onClick={handleBook}
               disabled={submitting || !form.fullName || !form.email}
-              className="w-full rounded-full bg-brand py-2.5 text-sm font-medium text-white hover:bg-brand-dark disabled:opacity-50"
+              className="w-full rounded-button bg-brand py-2.5 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
             >
               {submitting ? "Prenotazione in corso…" : "Conferma prenotazione"}
             </button>
@@ -221,13 +221,13 @@ export function BookingWidget({
         )}
 
         {result && (
-          <p className={`mt-4 rounded-lg px-4 py-2 text-sm ${result.ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+          <p className={`mt-4 rounded-lg px-4 py-2 text-sm ${result.ok ? "bg-success-light text-success" : "bg-error-light text-error"}`}>
             {result.message}
           </p>
         )}
 
         {!selectedSlot && (
-          <p className="mt-4 flex items-center gap-1.5 text-xs text-black/50">Seleziona un&apos;opzione per prenotare una visita</p>
+          <p className="mt-4 flex items-center gap-1.5 text-xs text-secondary">Seleziona un&apos;opzione per prenotare una visita</p>
         )}
       </div>
     </div>
