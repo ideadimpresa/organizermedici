@@ -125,6 +125,34 @@ export function appointmentReminderEmail(params: {
   };
 }
 
+export function appointmentRescheduledEmail(params: {
+  patientName: string;
+  doctorName: string;
+  startsAt: Date;
+  mode: "studio" | "online";
+}) {
+  const dateStr = params.startsAt.toLocaleString("it-IT", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return {
+    subject: `Appuntamento spostato con ${params.doctorName}`,
+    html: `
+      <div style="font-family:sans-serif;line-height:1.5">
+        <h2>Appuntamento riprogrammato</h2>
+        <p>Ciao ${params.patientName},</p>
+        <p>Il tuo appuntamento con <strong>${params.doctorName}</strong> è stato spostato a:</p>
+        <p><strong>${dateStr}</strong></p>
+        <p>${params.mode === "online" ? "Consulenza online" : "In studio"}</p>
+        <p>A presto,<br/>VisitaUp</p>
+      </div>
+    `,
+  };
+}
+
 export function doctorInviteEmail(params: { inviteUrl: string; fullName?: string | null }) {
   return {
     subject: "Sei stato invitato su VisitaUp",
