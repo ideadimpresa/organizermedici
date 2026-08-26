@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/session";
 import { logout } from "@/app/(auth)/actions";
@@ -22,8 +23,11 @@ export default async function DoctorLayout({ children }: { children: React.React
   return (
     <div className="flex min-h-screen">
       <aside className="hidden w-64 shrink-0 bg-navy p-5 md:block">
-        <Link href="/" className="text-lg font-bold text-white">
-          Visita<span className="text-aqua">Up</span>
+        <Link href="/" className="flex items-center gap-2">
+          <Image src="/logo-icon.png" alt="" width={28} height={25} className="h-7 w-auto" />
+          <span className="text-lg font-bold text-white">
+            Visita<span className="text-aqua">Up</span>
+          </span>
         </Link>
         <nav className="mt-8 flex flex-col gap-1">
           {NAV.map((item) => (
@@ -42,8 +46,8 @@ export default async function DoctorLayout({ children }: { children: React.React
       </aside>
       <div className="flex-1 bg-background">
         <header className="flex items-center justify-between border-b border-border bg-white px-6 py-4 md:hidden">
-          <Link href="/" className="text-lg font-bold text-navy">
-            Visita<span className="text-teal">Up</span>
+          <Link href="/">
+            <Image src="/logo-full.png" alt="VisitaUp" width={130} height={30} className="h-7 w-auto" />
           </Link>
           <form action={logout}>
             <button className="text-sm text-secondary">Esci</button>
