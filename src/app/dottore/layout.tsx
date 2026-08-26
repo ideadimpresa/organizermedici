@@ -13,6 +13,7 @@ const NAV = [
   { href: "/dottore/articoli", label: "Articoli & Social" },
   { href: "/dottore/abbonamento", label: "Abbonamento" },
   { href: "/dottore/profilo", label: "Profilo pubblico" },
+  { href: "/account/password", label: "Cambia password" },
 ];
 
 export default async function DoctorLayout({ children }: { children: React.ReactNode }) {

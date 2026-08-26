@@ -11,6 +11,7 @@ const NAV = [
   { href: "/admin/agenda", label: "Agenda (tutti)" },
   { href: "/admin/pazienti", label: "Pazienti (tutti)" },
   { href: "/admin/impostazioni", label: "Impostazioni" },
+  { href: "/account/password", label: "Cambia password" },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
