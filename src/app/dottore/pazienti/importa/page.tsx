@@ -81,7 +81,7 @@ export default function ImportPatientsPage() {
       </div>
       <p className="mt-1 text-secondary">Carica un file CSV esportato dal tuo gestionale, Excel o Google Contacts.</p>
 
-      <div className="mt-6 rounded-xl border border-border bg-white p-6">
+      <div className="mt-6 rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card p-6">
         <input
           type="file"
           accept=".csv"

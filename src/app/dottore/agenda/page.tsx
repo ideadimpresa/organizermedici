@@ -121,7 +121,7 @@ export default async function AgendaPage({
 
         <div className="mt-4 space-y-8">
           {grouped.size === 0 && (
-            <p className="rounded-xl border border-dashed border-border bg-white p-8 text-center text-secondary">
+            <p className="rounded-card border border-dashed border-border bg-surface p-8 text-center text-secondary">
               Nessun appuntamento questa settimana.
             </p>
           )}
@@ -130,7 +130,7 @@ export default async function AgendaPage({
               <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-secondary">{day}</h3>
               <div className="space-y-3">
                 {(appts || []).map((appt) => (
-                  <div key={appt.id} className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-border bg-white p-4 shadow-sm">
+                  <div key={appt.id} className="flex flex-wrap items-start justify-between gap-3 rounded-card border border-border border-l-4 border-l-teal bg-surface p-4 shadow-card">
                     <div>
                       <p className="font-medium">
                         {new Date(appt.starts_at).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })} ·{" "}

@@ -22,7 +22,7 @@ export default async function AdminOverviewPage() {
       <h1 className="text-2xl font-bold">Panoramica piattaforma</h1>
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         {stats.map((s) => (
-          <div key={s.label} className="rounded-xl border border-border bg-white p-5">
+          <div key={s.label} className="rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card p-5">
             <p className="text-2xl font-bold text-brand">{s.value}</p>
             <p className="text-sm text-secondary">{s.label}</p>
           </div>

@@ -23,7 +23,7 @@ export default async function AdminSettingsPage({
       {saved && <p className="mt-4 rounded-lg bg-success-light px-4 py-2 text-sm text-success">Impostazioni salvate.</p>}
 
       <form action={saveSettings} className="mt-6 space-y-8">
-        <section className="rounded-xl border border-border bg-white p-6">
+        <section className="rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card p-6">
           <h2 className="font-semibold">Email transazionali</h2>
           <div className="mt-4 space-y-3">
             <div>
@@ -78,7 +78,7 @@ export default async function AdminSettingsPage({
           </div>
         </section>
 
-        <section className="rounded-xl border border-border bg-white p-6">
+        <section className="rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card p-6">
           <h2 className="font-semibold">Pagamenti (Stripe)</h2>
           <div className="mt-4 space-y-3">
             <div>

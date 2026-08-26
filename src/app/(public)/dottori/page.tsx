@@ -18,9 +18,9 @@ export default async function DoctorsDirectoryPage() {
             <Link
               key={d.slug}
               href={`/dottori/${d.slug}`}
-              className="flex items-start gap-4 rounded-xl border border-border bg-white p-5 shadow-sm hover:shadow-md"
+              className="flex items-start gap-4 rounded-card border border-border border-l-4 border-l-teal bg-surface p-5 shadow-card transition hover:shadow-md"
             >
-              <div className="h-16 w-16 shrink-0 rounded-full bg-brand-light" />
+              <div className="h-16 w-16 shrink-0 rounded-card bg-brand-light" />
               <div>
                 <h2 className="font-semibold">{d.display_name}</h2>
                 <p className="text-sm text-secondary">{d.title}</p>

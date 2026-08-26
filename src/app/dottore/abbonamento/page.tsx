@@ -26,14 +26,14 @@ export default async function SubscriptionPage({
       <h1 className="text-2xl font-bold">Abbonamento</h1>
       {success && <p className="mt-4 rounded-lg bg-success-light px-4 py-2 text-sm text-success">Abbonamento attivato con successo!</p>}
 
-      <div className="mt-4 rounded-xl border border-border bg-white p-5">
+      <div className="mt-4 rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card p-5">
         <p className="text-sm text-secondary">Piano attuale</p>
         <p className="text-lg font-semibold">{PLAN_LABEL[doctor?.plan || "trial"]}</p>
         <p className="text-sm text-secondary">Stato: {STATUS_LABEL[doctor?.subscription_status || "inactive"]}</p>
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <div className="rounded-xl border border-border bg-white p-6">
+        <div className="rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card p-6">
           <h2 className="font-semibold">Starter</h2>
           <p className="mt-1 text-sm text-secondary">Agenda, CRM pazienti, promemoria email.</p>
           <SubscribeButton plan="starter" label="Passa a Starter" />

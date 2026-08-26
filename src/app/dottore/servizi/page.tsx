@@ -20,7 +20,7 @@ export default async function ServicesPage() {
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-3">
           {(services || []).map((s) => (
-            <div key={s.id} className="flex items-center justify-between rounded-xl border border-border bg-white p-4">
+            <div key={s.id} className="flex items-center justify-between rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card p-4">
               <div>
                 <p className="font-medium">{s.name}</p>
                 <p className="text-sm text-secondary">
@@ -33,13 +33,13 @@ export default async function ServicesPage() {
             </div>
           ))}
           {(!services || services.length === 0) && (
-            <p className="rounded-xl border border-dashed border-border bg-white p-8 text-center text-secondary">
+            <p className="rounded-card border border-dashed border-border bg-surface p-8 text-center text-secondary">
               Nessuna prestazione configurata.
             </p>
           )}
         </div>
 
-        <div className="rounded-xl border border-border bg-white p-5">
+        <div className="rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card p-5">
           <h2 className="font-semibold">Nuova prestazione</h2>
           <form action={addService} className="mt-4 space-y-3">
             <input name="name" required placeholder="Nome prestazione" className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />

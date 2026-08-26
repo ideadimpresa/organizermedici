@@ -27,7 +27,7 @@ export default async function ArticlesPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-3">
           {(articles || []).map((a) => (
-            <div key={a.id} className="rounded-xl border border-border bg-white p-4">
+            <div key={a.id} className="rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card p-4">
               <div className="flex items-center justify-between">
                 <p className="font-medium">{a.title}</p>
                 <span className={`rounded-full px-3 py-1 text-xs font-medium ${a.status === "published" ? "bg-success-light text-success" : "bg-border text-secondary"}`}>
@@ -42,13 +42,13 @@ export default async function ArticlesPage() {
             </div>
           ))}
           {(!articles || articles.length === 0) && (
-            <p className="rounded-xl border border-dashed border-border bg-white p-8 text-center text-secondary">
+            <p className="rounded-card border border-dashed border-border bg-surface p-8 text-center text-secondary">
               Nessun articolo ancora. Scrivi il primo!
             </p>
           )}
         </div>
 
-        <form action={createArticle} className="space-y-3 rounded-xl border border-border bg-white p-5">
+        <form action={createArticle} className="space-y-3 rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card p-5">
           <h2 className="font-semibold">Nuovo articolo</h2>
           <input name="title" required placeholder="Titolo" className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
           <input name="excerpt" placeholder="Riassunto breve" className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
@@ -73,14 +73,14 @@ export default async function ArticlesPage() {
           </a>
         </p>
         <div className="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2">
-          <form action={saveSocialAccount} className="space-y-3 rounded-xl border border-border bg-white p-5">
+          <form action={saveSocialAccount} className="space-y-3 rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card p-5">
             <input type="hidden" name="platform" value="facebook" />
             <h3 className="font-medium">Facebook</h3>
             <input name="external_account_id" defaultValue={fbAccount?.external_account_id} placeholder="Page ID" className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
             <input name="access_token" defaultValue={fbAccount?.access_token} placeholder="Page Access Token" className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
             <button className="w-full rounded-button border border-brand py-2 text-sm font-semibold text-brand hover:bg-brand-light">Salva</button>
           </form>
-          <form action={saveSocialAccount} className="space-y-3 rounded-xl border border-border bg-white p-5">
+          <form action={saveSocialAccount} className="space-y-3 rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card p-5">
             <input type="hidden" name="platform" value="instagram" />
             <h3 className="font-medium">Instagram</h3>
             <input name="external_account_id" defaultValue={igAccount?.external_account_id} placeholder="Instagram Business Account ID" className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />

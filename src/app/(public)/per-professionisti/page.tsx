@@ -7,7 +7,7 @@ export default function PerProfessionistiPage() {
         del profilo professionale avviene tramite invito diretto del nostro team, per garantire
         qualità e verifica dei professionisti presenti sulla piattaforma.
       </p>
-      <div className="mt-8 rounded-xl border border-border bg-white p-6">
+      <div className="mt-8 rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card p-6">
         <h2 className="font-semibold">Cosa include</h2>
         <ul className="mt-3 list-inside list-disc space-y-2 text-foreground">
           <li>Agenda online con appuntamenti in studio e consulenze a distanza</li>

@@ -44,7 +44,7 @@ export default async function AdminPatientsPage({
         <button className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-surface-hover">Filtra</button>
       </form>
 
-      <div className="mt-6 overflow-x-auto rounded-xl border border-border bg-white">
+      <div className="mt-6 overflow-x-auto rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card">
         <table className="w-full text-sm">
           <thead className="border-b border-border bg-background text-left text-secondary">
             <tr>

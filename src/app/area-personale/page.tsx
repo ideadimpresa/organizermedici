@@ -37,7 +37,7 @@ export default async function PatientAreaPage() {
           const doctor = a.doctors as unknown as { display_name: string; slug: string };
           const service = a.services as unknown as { name: string } | null;
           return (
-            <div key={a.id} className="rounded-xl border border-border bg-white p-4">
+            <div key={a.id} className="rounded-card border border-border border-l-4 border-l-teal bg-surface p-4 shadow-card">
               <p className="font-medium">
                 {new Date(a.starts_at).toLocaleString("it-IT", { dateStyle: "full", timeStyle: "short" })}
               </p>
@@ -53,7 +53,7 @@ export default async function PatientAreaPage() {
           );
         })}
         {(!appointments || appointments.length === 0) && (
-          <p className="rounded-xl border border-dashed border-border bg-white p-8 text-center text-secondary">
+          <p className="rounded-card border border-dashed border-border bg-surface p-8 text-center text-secondary">
             Nessun appuntamento prenotato.{" "}
             <Link href="/dottori" className="text-brand hover:underline">
               Trova un nutrizionista

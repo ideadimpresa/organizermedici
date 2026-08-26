@@ -31,14 +31,14 @@ export default async function AvailabilityPage() {
         <div className="mt-3 grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-2">
             {(addresses || []).map((a) => (
-              <div key={a.id} className="rounded-xl border border-border bg-white p-4">
+              <div key={a.id} className="rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card p-4">
                 <p className="font-medium">{a.label}</p>
                 <p className="text-sm text-secondary">{a.address_line}, {a.city}</p>
               </div>
             ))}
             {(!addresses || addresses.length === 0) && <p className="text-secondary">Nessun indirizzo configurato.</p>}
           </div>
-          <form action={addAddress} className="space-y-3 rounded-xl border border-border bg-white p-5">
+          <form action={addAddress} className="space-y-3 rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card p-5">
             <input name="label" placeholder="Etichetta (es. Studio)" defaultValue="Studio" className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
             <input name="address_line" required placeholder="Indirizzo" className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
             <input name="city" required placeholder="Città" className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
@@ -53,7 +53,7 @@ export default async function AvailabilityPage() {
         <div className="mt-3 grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-2">
             {(rules || []).map((r) => (
-              <div key={r.id} className="flex items-center justify-between rounded-xl border border-border bg-white p-4">
+              <div key={r.id} className="flex items-center justify-between rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card p-4">
                 <p className="text-sm">
                   <span className="font-medium">{WEEKDAYS[r.weekday]}</span> · {r.start_time.slice(0, 5)}–{r.end_time.slice(0, 5)} ·{" "}
                   {r.mode === "online" ? "Online" : "In studio"} · slot {r.slot_duration_minutes} min
@@ -63,7 +63,7 @@ export default async function AvailabilityPage() {
             ))}
             {(!rules || rules.length === 0) && <p className="text-secondary">Nessun orario configurato: la pagina di prenotazione non mostrerà slot.</p>}
           </div>
-          <form action={addAvailabilityRule} className="space-y-3 rounded-xl border border-border bg-white p-5">
+          <form action={addAvailabilityRule} className="space-y-3 rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card p-5">
             <select name="weekday" className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none">
               {WEEKDAYS.map((d, i) => (
                 <option key={d} value={i}>
@@ -99,14 +99,14 @@ export default async function AvailabilityPage() {
         <div className="mt-3 grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-2">
             {(closures || []).map((c) => (
-              <div key={c.id} className="rounded-xl border border-border bg-white p-4 text-sm">
+              <div key={c.id} className="rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card p-4 text-sm">
                 {new Date(c.date).toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}
                 {c.reason ? ` — ${c.reason}` : ""}
               </div>
             ))}
             {(!closures || closures.length === 0) && <p className="text-secondary">Nessuna chiusura programmata.</p>}
           </div>
-          <form action={addClosure} className="space-y-3 rounded-xl border border-border bg-white p-5">
+          <form action={addClosure} className="space-y-3 rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card p-5">
             <input name="date" type="date" required className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
             <input name="reason" placeholder="Motivo (opzionale)" className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
             <button className="w-full rounded-button bg-brand py-2 text-sm font-semibold text-white hover:bg-brand-dark">Blocca giornata</button>

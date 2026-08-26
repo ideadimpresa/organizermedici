@@ -19,7 +19,7 @@ export default async function DoctorProfileSettingsPage() {
         </a>
       </p>
 
-      <form action={updateDoctorProfile} className="mt-6 max-w-2xl space-y-4 rounded-xl border border-border bg-white p-6">
+      <form action={updateDoctorProfile} className="mt-6 max-w-2xl space-y-4 rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card p-6">
         <div>
           <label className="block text-sm font-medium">Nome visualizzato</label>
           <input name="display_name" defaultValue={doctor.display_name} required className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />

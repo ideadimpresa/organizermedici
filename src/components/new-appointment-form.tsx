@@ -81,7 +81,7 @@ export function NewAppointmentForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 rounded-xl border border-border bg-white p-5">
+    <form onSubmit={handleSubmit} className="space-y-3 rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card p-5">
       <h2 className="font-semibold">Nuovo appuntamento</h2>
 
       <div className="flex gap-2 text-sm">

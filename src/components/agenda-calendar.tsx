@@ -20,7 +20,7 @@ export function AgendaCalendar({
   const nextMonth = format(addMonths(monthDate, 1), "yyyy-MM");
 
   return (
-    <div className="rounded-xl border border-border bg-white p-4">
+    <div className="rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card p-4">
       <div className="flex items-center justify-between">
         <h2 className="font-semibold capitalize">{format(monthDate, "MMMM yyyy", { locale: it })}</h2>
         <div className="flex gap-1">

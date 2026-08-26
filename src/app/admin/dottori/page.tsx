@@ -46,7 +46,7 @@ export default async function AdminDoctorsPage({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-3">
           {(doctors || []).map((d) => (
-            <div key={d.id} className="flex items-center justify-between rounded-xl border border-border bg-white p-4">
+            <div key={d.id} className="flex items-center justify-between rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card p-4">
               <div>
                 <p className="font-medium">{d.display_name}</p>
                 <p className="text-sm text-secondary">
@@ -63,7 +63,7 @@ export default async function AdminDoctorsPage({
               <h2 className="font-semibold">Inviti in attesa</h2>
               <div className="mt-3 space-y-2">
                 {invites.map((i) => (
-                  <div key={i.id} className="flex items-center justify-between rounded-xl border border-border bg-white p-4 text-sm">
+                  <div key={i.id} className="flex items-center justify-between rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card p-4 text-sm">
                     <span>
                       {i.email} {i.full_name ? `(${i.full_name})` : ""} — scade il{" "}
                       {new Date(i.expires_at).toLocaleDateString("it-IT")}
@@ -76,7 +76,7 @@ export default async function AdminDoctorsPage({
           )}
         </div>
 
-        <form action={inviteDoctor} className="space-y-3 rounded-xl border border-border bg-white p-5">
+        <form action={inviteDoctor} className="space-y-3 rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card p-5">
           <h2 className="font-semibold">Invita un dottore</h2>
           <input name="full_name" placeholder="Nome e cognome" className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
           <input name="email" type="email" required placeholder="Email" className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />

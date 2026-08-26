@@ -42,7 +42,7 @@ export default async function PatientsPage({
       </form>
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 overflow-x-auto rounded-xl border border-border bg-white">
+        <div className="lg:col-span-2 overflow-x-auto rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card">
           <table className="w-full text-sm">
             <thead className="border-b border-border bg-background text-left text-secondary">
               <tr>
@@ -75,7 +75,7 @@ export default async function PatientsPage({
           </table>
         </div>
 
-        <div className="rounded-xl border border-border bg-white p-5">
+        <div className="rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card p-5">
           <h2 className="font-semibold">Aggiungi paziente</h2>
           <form action={addPatient} className="mt-4 space-y-3">
             <input name="full_name" required placeholder="Nome e cognome" className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
