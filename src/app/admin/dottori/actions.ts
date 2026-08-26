@@ -1,5 +1,6 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail, doctorInviteEmail } from "@/lib/email";
@@ -24,9 +25,17 @@ export async function inviteDoctor(formData: FormData) {
 
   const inviteUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/auth/invito/${invite.token}`;
   const { subject, html } = doctorInviteEmail({ inviteUrl, fullName });
-  await sendEmail({ to: email, subject, html }).catch((err) => console.error("[invite] email error", err));
+
+  try {
+    await sendEmail({ to: email, subject, html });
+  } catch (err) {
+    console.error("[invite] email error", err);
+    revalidatePath("/admin/dottori");
+    redirect(`/admin/dottori?emailFailed=1&inviteUrl=${encodeURIComponent(inviteUrl)}`);
+  }
 
   revalidatePath("/admin/dottori");
+  redirect("/admin/dottori?invited=1");
 }
 
 export async function revokeInvite(id: string) {

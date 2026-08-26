@@ -28,6 +28,7 @@ export async function GET(request: Request) {
     .lte("starts_at", windowEnd.toISOString());
 
   let sent = 0;
+  let failed = 0;
   for (const appt of appointments || []) {
     const { data: alreadySent } = await admin
       .from("reminders_log")
@@ -49,10 +50,15 @@ export async function GET(request: Request) {
       meetingLink: appt.meeting_link,
     });
 
-    await sendEmail({ to: patient.email, subject, html });
-    await admin.from("reminders_log").insert({ appointment_id: appt.id, kind: "reminder_24h" });
-    sent += 1;
+    try {
+      await sendEmail({ to: patient.email, subject, html });
+      await admin.from("reminders_log").insert({ appointment_id: appt.id, kind: "reminder_24h" });
+      sent += 1;
+    } catch (err) {
+      console.error("[cron/reminders] email error", err);
+      failed += 1;
+    }
   }
 
-  return NextResponse.json({ checked: appointments?.length ?? 0, sent });
+  return NextResponse.json({ checked: appointments?.length ?? 0, sent, failed });
 }

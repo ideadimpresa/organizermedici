@@ -49,15 +49,13 @@ export async function sendEmail(input: SendEmailInput) {
 
   if (settings.emailProvider === "brevo") {
     if (!settings.brevoApiKey) {
-      console.warn("[email] Brevo non configurato, email non inviata:", input.subject, "->", input.to);
-      return;
+      throw new Error("Brevo non configurato: imposta la chiave API in /admin/impostazioni");
     }
     return sendViaBrevo(input, settings.brevoApiKey, settings.emailFromName, fromAddress);
   }
 
   if (!settings.resendApiKey) {
-    console.warn("[email] Resend non configurato, email non inviata:", input.subject, "->", input.to);
-    return;
+    throw new Error("Resend non configurato: imposta la chiave API in /admin/impostazioni");
   }
   return sendViaResend(input, settings.resendApiKey, settings.emailFromName, fromAddress);
 }
