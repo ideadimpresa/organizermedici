@@ -12,6 +12,9 @@ export type ArticleStatus = "draft" | "published";
 export type SocialPlatform = "instagram" | "facebook";
 export type SocialPostStatus = "pending" | "posted" | "failed";
 export type InviteStatus = "pending" | "accepted" | "expired" | "revoked";
+export type MisurazioneFonte = "manuale" | "csv_bia" | "akern";
+export type PastoTipo = "colazione" | "pranzo" | "cena" | "spuntino";
+export type AllergiaTipo = "allergene" | "intolleranza";
 
 export interface Database {
   public: {
@@ -301,6 +304,75 @@ export interface Database {
           kind: "confirmation" | "reminder_24h" | "cancellation";
         };
         Update: Partial<Database["public"]["Tables"]["reminders_log"]["Row"]>;
+        Relationships: [];
+      };
+      misurazioni: {
+        Row: {
+          id: string;
+          doctor_id: string;
+          patient_id: string;
+          data: string;
+          peso_kg: number | null;
+          massa_grassa_kg: number | null;
+          massa_grassa_perc: number | null;
+          massa_magra_kg: number | null;
+          massa_muscolare_kg: number | null;
+          acqua_perc: number | null;
+          acqua_kg: number | null;
+          fonte: MisurazioneFonte;
+          note: string | null;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["misurazioni"]["Row"]> & {
+          doctor_id: string;
+          patient_id: string;
+          data: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["misurazioni"]["Row"]>;
+        Relationships: [];
+      };
+      diario_alimentare: {
+        Row: {
+          id: string;
+          doctor_id: string;
+          patient_id: string;
+          data: string;
+          pasto: PastoTipo;
+          contenuto: string;
+          aderenza: string | null;
+          note: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["diario_alimentare"]["Row"]> & {
+          doctor_id: string;
+          patient_id: string;
+          data: string;
+          pasto: PastoTipo;
+          contenuto: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["diario_alimentare"]["Row"]>;
+        Relationships: [];
+      };
+      allergeni_intolleranze: {
+        Row: {
+          id: string;
+          doctor_id: string;
+          patient_id: string;
+          tipo: AllergiaTipo;
+          sostanza: string;
+          gravita: string | null;
+          note: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["allergeni_intolleranze"]["Row"]> & {
+          doctor_id: string;
+          patient_id: string;
+          tipo: AllergiaTipo;
+          sostanza: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["allergeni_intolleranze"]["Row"]>;
         Relationships: [];
       };
       platform_settings: {

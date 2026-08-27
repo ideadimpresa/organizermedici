@@ -54,7 +54,11 @@ export default async function PatientsPage({
             <tbody>
               {(patients || []).map((p) => (
                 <tr key={p.id} className="border-b border-border last:border-0">
-                  <td className="px-4 py-3 font-medium">{p.full_name}</td>
+                  <td className="px-4 py-3 font-medium">
+                    <Link href={`/dottore/pazienti/${p.id}`} className="text-brand hover:underline">
+                      {p.full_name}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3 text-secondary">
                     {p.email}
                     {p.phone ? ` · ${p.phone}` : ""}
