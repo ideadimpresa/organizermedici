@@ -30,6 +30,7 @@ export async function addOwnDiarioEntry(patientId: string, formData: FormData) {
     aderenza: String(formData.get("aderenza") || "") || null,
   });
   if (error) throw new Error(error.message);
+  revalidatePath("/area-personale/diario");
   revalidatePath("/area-personale");
 }
 
@@ -37,6 +38,7 @@ export async function deleteOwnDiarioEntry(id: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("diario_alimentare").delete().eq("id", id);
   if (error) throw new Error(error.message);
+  revalidatePath("/area-personale/diario");
   revalidatePath("/area-personale");
 }
 
@@ -50,6 +52,7 @@ export async function addOwnAllergia(patientId: string, formData: FormData) {
     gravita: String(formData.get("gravita") || "") || null,
   });
   if (error) throw new Error(error.message);
+  revalidatePath("/area-personale/allergie");
   revalidatePath("/area-personale");
 }
 
@@ -57,5 +60,6 @@ export async function deleteOwnAllergia(id: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("allergeni_intolleranze").delete().eq("id", id);
   if (error) throw new Error(error.message);
+  revalidatePath("/area-personale/allergie");
   revalidatePath("/area-personale");
 }

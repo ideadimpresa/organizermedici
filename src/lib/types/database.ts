@@ -13,7 +13,7 @@ export type SocialPlatform = "instagram" | "facebook";
 export type SocialPostStatus = "pending" | "posted" | "failed";
 export type InviteStatus = "pending" | "accepted" | "expired" | "revoked";
 export type MisurazioneFonte = "manuale" | "csv_bia" | "akern";
-export type PastoTipo = "colazione" | "pranzo" | "cena" | "spuntino";
+export type PastoTipo = "colazione" | "pranzo" | "cena" | "spuntino" | "giornata";
 export type AllergiaTipo = "allergene" | "intolleranza";
 
 export interface Database {

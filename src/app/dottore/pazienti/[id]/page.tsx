@@ -5,6 +5,8 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { EntryDeleteButton } from "@/components/entry-delete-button";
 import { WeightTrendChart } from "@/components/weight-trend-chart";
 import { BiaImportForm } from "@/components/bia-import-form";
+import { MealPlanCard } from "@/components/meal-plan-card";
+import { sortPlansByDate, labelPlanRange } from "@/lib/meal-plan";
 import {
   addMisurazione,
   deleteMisurazione,
@@ -21,6 +23,7 @@ const PASTO_LABEL: Record<string, string> = {
   pranzo: "Pranzo",
   cena: "Cena",
   spuntino: "Spuntino",
+  giornata: "Diario del giorno",
 };
 
 const DOCS_BUCKET = "documenti-pazienti";
@@ -50,7 +53,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
     .map((m) => ({ data: m.data, value: m.peso_kg as number }));
 
   const pianiWithUrl = await Promise.all(
-    (piani || []).map(async (p) => {
+    sortPlansByDate(piani || []).map(async (p) => {
       const { data } = await supabase.storage.from(DOCS_BUCKET).createSignedUrl(p.file_path, 3600);
       return { ...p, signedUrl: data?.signedUrl ?? null };
     })
@@ -161,29 +164,15 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
         <div className="mt-3 grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-2">
             {pianiWithUrl.map((p) => (
-              <details key={p.id} className="rounded-card border border-border border-l-4 border-l-teal bg-surface p-4 shadow-card">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
-                  <div>
-                    <p className="font-medium">{p.titolo}</p>
-                    <p className="text-sm text-secondary">
-                      {p.data_inizio ? new Date(p.data_inizio).toLocaleDateString("it-IT") : "—"}
-                      {p.data_fine ? ` – ${new Date(p.data_fine).toLocaleDateString("it-IT")}` : ""}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-3">
-                    {p.signedUrl && (
-                      <a href={p.signedUrl} target="_blank" className="text-sm text-brand hover:underline">
-                        Apri PDF
-                      </a>
-                    )}
-                    <EntryDeleteButton action={deletePianoAlimentare.bind(null, p.id, id, p.file_path)} />
-                  </div>
-                </summary>
-                {p.note && <p className="mt-3 text-sm text-secondary">{p.note}</p>}
-                {p.content_text && (
-                  <pre className="mt-3 max-h-64 overflow-y-auto whitespace-pre-wrap rounded-lg bg-background p-3 text-xs text-secondary">{p.content_text}</pre>
-                )}
-              </details>
+              <MealPlanCard
+                key={p.id}
+                titolo={p.titolo}
+                contentText={p.content_text}
+                note={p.note}
+                signedUrl={p.signedUrl}
+                rangeLabel={labelPlanRange(p)}
+                actions={<EntryDeleteButton action={deletePianoAlimentare.bind(null, p.id, id, p.file_path)} />}
+              />
             ))}
             {pianiWithUrl.length === 0 && (
               <p className="rounded-card border border-dashed border-border bg-surface p-8 text-center text-secondary">
