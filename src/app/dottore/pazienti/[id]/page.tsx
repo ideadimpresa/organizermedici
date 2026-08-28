@@ -4,7 +4,17 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { EntryDeleteButton } from "@/components/entry-delete-button";
 import { WeightTrendChart } from "@/components/weight-trend-chart";
-import { addMisurazione, deleteMisurazione, addDiarioEntry, deleteDiarioEntry, addAllergia, deleteAllergia } from "./actions";
+import { BiaImportForm } from "@/components/bia-import-form";
+import {
+  addMisurazione,
+  deleteMisurazione,
+  addDiarioEntry,
+  deleteDiarioEntry,
+  addAllergia,
+  deleteAllergia,
+  uploadPianoAlimentare,
+  deletePianoAlimentare,
+} from "./actions";
 
 const PASTO_LABEL: Record<string, string> = {
   colazione: "Colazione",
@@ -12,6 +22,8 @@ const PASTO_LABEL: Record<string, string> = {
   cena: "Cena",
   spuntino: "Spuntino",
 };
+
+const DOCS_BUCKET = "documenti-pazienti";
 
 export default async function PatientDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -26,15 +38,33 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
     .single();
   if (!patient) notFound();
 
-  const [{ data: misurazioni }, { data: diario }, { data: allergie }] = await Promise.all([
+  const [{ data: misurazioni }, { data: diario }, { data: allergie }, { data: piani }] = await Promise.all([
     supabase.from("misurazioni").select("*").eq("patient_id", id).order("data", { ascending: true }),
     supabase.from("diario_alimentare").select("*").eq("patient_id", id).order("data", { ascending: false }).limit(30),
     supabase.from("allergeni_intolleranze").select("*").eq("patient_id", id).order("created_at", { ascending: false }),
+    supabase.from("piani_alimentari").select("*").eq("patient_id", id).order("created_at", { ascending: false }),
   ]);
 
   const weightPoints = (misurazioni || [])
     .filter((m) => m.peso_kg != null)
     .map((m) => ({ data: m.data, value: m.peso_kg as number }));
+
+  const pianiWithUrl = await Promise.all(
+    (piani || []).map(async (p) => {
+      const { data } = await supabase.storage.from(DOCS_BUCKET).createSignedUrl(p.file_path, 3600);
+      return { ...p, signedUrl: data?.signedUrl ?? null };
+    })
+  );
+
+  const misurazioniFileUrls = new Map<string, string>();
+  await Promise.all(
+    (misurazioni || [])
+      .filter((m) => m.file_path)
+      .map(async (m) => {
+        const { data } = await supabase.storage.from(DOCS_BUCKET).createSignedUrl(m.file_path as string, 3600);
+        if (data?.signedUrl) misurazioniFileUrls.set(m.id, data.signedUrl);
+      })
+  );
 
   return (
     <div className="space-y-10 pb-10">
@@ -55,27 +85,31 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
           <div className="lg:col-span-2 rounded-card border border-border border-l-4 border-l-teal bg-surface p-5 shadow-card">
             <WeightTrendChart points={weightPoints} label="Peso" unit="kg" />
           </div>
-          <form action={addMisurazione.bind(null, id)} className="space-y-3 rounded-card border border-border bg-surface p-5 shadow-card">
-            <h3 className="font-semibold">Nuova misurazione</h3>
-            <input
-              name="data"
-              type="date"
-              required
-              defaultValue={new Date().toISOString().slice(0, 10)}
-              className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none"
-            />
-            <div className="grid grid-cols-2 gap-2">
-              <input name="peso_kg" type="number" step="0.1" placeholder="Peso (kg)" className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
-              <input name="massa_grassa_perc" type="number" step="0.1" placeholder="Massa grassa (%)" className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
-              <input name="massa_grassa_kg" type="number" step="0.1" placeholder="Massa grassa (kg)" className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
-              <input name="massa_magra_kg" type="number" step="0.1" placeholder="Massa magra (kg)" className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
-              <input name="massa_muscolare_kg" type="number" step="0.1" placeholder="Massa muscolare (kg)" className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
-              <input name="acqua_perc" type="number" step="0.1" placeholder="Acqua (%)" className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
-              <input name="acqua_kg" type="number" step="0.1" placeholder="Acqua (kg)" className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
-            </div>
-            <textarea name="note" placeholder="Note" rows={2} className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
-            <button className="w-full rounded-button bg-brand py-2 text-sm font-semibold text-white hover:bg-brand-dark">Salva misurazione</button>
-          </form>
+          <div className="space-y-6">
+            <form action={addMisurazione.bind(null, id)} className="space-y-3 rounded-card border border-border bg-surface p-5 shadow-card">
+              <h3 className="font-semibold">Nuova misurazione manuale</h3>
+              <input
+                name="data"
+                type="date"
+                required
+                defaultValue={new Date().toISOString().slice(0, 10)}
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <input name="peso_kg" type="number" step="0.1" placeholder="Peso (kg)" className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
+                <input name="massa_grassa_perc" type="number" step="0.1" placeholder="Massa grassa (%)" className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
+                <input name="massa_grassa_kg" type="number" step="0.1" placeholder="Massa grassa (kg)" className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
+                <input name="massa_magra_kg" type="number" step="0.1" placeholder="Massa magra (kg)" className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
+                <input name="massa_muscolare_kg" type="number" step="0.1" placeholder="Massa muscolare (kg)" className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
+                <input name="acqua_perc" type="number" step="0.1" placeholder="Acqua (%)" className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
+                <input name="acqua_kg" type="number" step="0.1" placeholder="Acqua (kg)" className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
+              </div>
+              <textarea name="note" placeholder="Note" rows={2} className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
+              <button className="w-full rounded-button bg-brand py-2 text-sm font-semibold text-white hover:bg-brand-dark">Salva misurazione</button>
+            </form>
+
+            <BiaImportForm patientId={id} />
+          </div>
         </div>
 
         {misurazioni && misurazioni.length > 0 && (
@@ -100,7 +134,17 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                       {m.massa_grassa_kg != null ? `${m.massa_grassa_kg} kg` : m.massa_grassa_perc != null ? `${m.massa_grassa_perc}%` : "—"}
                     </td>
                     <td className="px-4 py-3 text-secondary">{m.massa_magra_kg != null ? `${m.massa_magra_kg} kg` : "—"}</td>
-                    <td className="px-4 py-3 text-secondary">{m.fonte}</td>
+                    <td className="px-4 py-3 text-secondary">
+                      {m.fonte}
+                      {misurazioniFileUrls.has(m.id) && (
+                        <>
+                          {" · "}
+                          <a href={misurazioniFileUrls.get(m.id)} target="_blank" className="text-brand hover:underline">
+                            PDF
+                          </a>
+                        </>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-right">
                       <EntryDeleteButton action={deleteMisurazione.bind(null, m.id, id)} />
                     </td>
@@ -110,6 +154,55 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
             </table>
           </div>
         )}
+      </section>
+
+      <section>
+        <h2 className="font-semibold">Piani alimentari</h2>
+        <div className="mt-3 grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2 space-y-2">
+            {pianiWithUrl.map((p) => (
+              <details key={p.id} className="rounded-card border border-border border-l-4 border-l-teal bg-surface p-4 shadow-card">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+                  <div>
+                    <p className="font-medium">{p.titolo}</p>
+                    <p className="text-sm text-secondary">
+                      {p.data_inizio ? new Date(p.data_inizio).toLocaleDateString("it-IT") : "—"}
+                      {p.data_fine ? ` – ${new Date(p.data_fine).toLocaleDateString("it-IT")}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-3">
+                    {p.signedUrl && (
+                      <a href={p.signedUrl} target="_blank" className="text-sm text-brand hover:underline">
+                        Apri PDF
+                      </a>
+                    )}
+                    <EntryDeleteButton action={deletePianoAlimentare.bind(null, p.id, id, p.file_path)} />
+                  </div>
+                </summary>
+                {p.note && <p className="mt-3 text-sm text-secondary">{p.note}</p>}
+                {p.content_text && (
+                  <pre className="mt-3 max-h-64 overflow-y-auto whitespace-pre-wrap rounded-lg bg-background p-3 text-xs text-secondary">{p.content_text}</pre>
+                )}
+              </details>
+            ))}
+            {pianiWithUrl.length === 0 && (
+              <p className="rounded-card border border-dashed border-border bg-surface p-8 text-center text-secondary">
+                Nessun piano alimentare caricato.
+              </p>
+            )}
+          </div>
+          <form action={uploadPianoAlimentare.bind(null, id)} className="space-y-3 rounded-card border border-border bg-surface p-5 shadow-card">
+            <h3 className="font-semibold">Carica piano alimentare</h3>
+            <input name="titolo" required placeholder="Titolo (es. Dieta autunno 2026)" className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
+            <div className="flex gap-2">
+              <input name="data_inizio" type="date" className="w-1/2 rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
+              <input name="data_fine" type="date" className="w-1/2 rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
+            </div>
+            <input name="file" type="file" accept="application/pdf" required className="text-sm" />
+            <textarea name="note" placeholder="Note" rows={2} className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
+            <button className="w-full rounded-button bg-brand py-2 text-sm font-semibold text-white hover:bg-brand-dark">Carica PDF</button>
+          </form>
+        </div>
       </section>
 
       <section>

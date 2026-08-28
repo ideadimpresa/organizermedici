@@ -320,6 +320,7 @@ export interface Database {
           acqua_perc: number | null;
           acqua_kg: number | null;
           fonte: MisurazioneFonte;
+          file_path: string | null;
           note: string | null;
           created_at: string;
         };
@@ -373,6 +374,28 @@ export interface Database {
           sostanza: string;
         };
         Update: Partial<Database["public"]["Tables"]["allergeni_intolleranze"]["Row"]>;
+        Relationships: [];
+      };
+      piani_alimentari: {
+        Row: {
+          id: string;
+          doctor_id: string;
+          patient_id: string;
+          titolo: string;
+          data_inizio: string | null;
+          data_fine: string | null;
+          file_path: string;
+          content_text: string | null;
+          note: string | null;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["piani_alimentari"]["Row"]> & {
+          doctor_id: string;
+          patient_id: string;
+          titolo: string;
+          file_path: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["piani_alimentari"]["Row"]>;
         Relationships: [];
       };
       platform_settings: {

@@ -13,6 +13,8 @@ const PASTO_LABEL: Record<string, string> = {
   spuntino: "Spuntino",
 };
 
+const DOCS_BUCKET = "documenti-pazienti";
+
 export default async function PatientAreaPage() {
   const user = await getCurrentUser();
   const supabase = await createClient();
@@ -21,7 +23,7 @@ export default async function PatientAreaPage() {
   const patientIds = (patientRows || []).map((p) => p.id);
   const primaryPatientId = patientIds[0];
 
-  const [{ data: appointments }, { data: misurazioni }, { data: diario }, { data: allergie }] = patientIds.length
+  const [{ data: appointments }, { data: misurazioni }, { data: diario }, { data: allergie }, { data: piani }] = patientIds.length
     ? await Promise.all([
         supabase
           .from("appointments")
@@ -31,12 +33,20 @@ export default async function PatientAreaPage() {
         supabase.from("misurazioni").select("*").in("patient_id", patientIds).order("data", { ascending: true }),
         supabase.from("diario_alimentare").select("*").in("patient_id", patientIds).order("data", { ascending: false }).limit(30),
         supabase.from("allergeni_intolleranze").select("*").in("patient_id", patientIds).order("created_at", { ascending: false }),
+        supabase.from("piani_alimentari").select("*").in("patient_id", patientIds).order("created_at", { ascending: false }),
       ])
-    : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }];
+    : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }, { data: [] }];
 
   const weightPoints = (misurazioni || [])
     .filter((m) => m.peso_kg != null)
     .map((m) => ({ data: m.data, value: m.peso_kg as number }));
+
+  const pianiWithUrl = await Promise.all(
+    (piani || []).map(async (p) => {
+      const { data } = await supabase.storage.from(DOCS_BUCKET).createSignedUrl(p.file_path, 3600);
+      return { ...p, signedUrl: data?.signedUrl ?? null };
+    })
+  );
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
@@ -91,6 +101,39 @@ export default async function PatientAreaPage() {
             <h2 className="font-semibold">Andamento peso</h2>
             <div className="mt-3 rounded-card border border-border border-l-4 border-l-teal bg-surface p-5 shadow-card">
               <WeightTrendChart points={weightPoints} label="Peso" unit="kg" />
+            </div>
+          </section>
+
+          <section className="mt-10">
+            <h2 className="font-semibold">Piani alimentari</h2>
+            <div className="mt-3 space-y-2">
+              {pianiWithUrl.map((p) => (
+                <details key={p.id} className="rounded-card border border-border border-l-4 border-l-teal bg-surface p-4 shadow-card">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+                    <div>
+                      <p className="font-medium">{p.titolo}</p>
+                      <p className="text-sm text-secondary">
+                        {p.data_inizio ? new Date(p.data_inizio).toLocaleDateString("it-IT") : "—"}
+                        {p.data_fine ? ` – ${new Date(p.data_fine).toLocaleDateString("it-IT")}` : ""}
+                      </p>
+                    </div>
+                    {p.signedUrl && (
+                      <a href={p.signedUrl} target="_blank" className="shrink-0 text-sm text-brand hover:underline">
+                        Apri PDF
+                      </a>
+                    )}
+                  </summary>
+                  {p.note && <p className="mt-3 text-sm text-secondary">{p.note}</p>}
+                  {p.content_text && (
+                    <pre className="mt-3 max-h-64 overflow-y-auto whitespace-pre-wrap rounded-lg bg-background p-3 text-xs text-secondary">{p.content_text}</pre>
+                  )}
+                </details>
+              ))}
+              {pianiWithUrl.length === 0 && (
+                <p className="rounded-card border border-dashed border-border bg-surface p-8 text-center text-secondary">
+                  Nessun piano alimentare caricato dal tuo nutrizionista.
+                </p>
+              )}
             </div>
           </section>
 
