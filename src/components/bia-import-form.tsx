@@ -1,112 +1,188 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import {
-  parseBiaPdf,
-  confirmBiaImport,
-  discardBiaImport,
-  type BiaParseResult,
-} from "@/app/dottore/pazienti/[id]/actions";
+import { importBiaRows } from "@/app/dottore/pazienti/[id]/actions";
+
+interface Row {
+  id: number;
+  data: string;
+  peso_kg: string;
+  massa_grassa_kg: string;
+  massa_grassa_perc: string;
+  massa_magra_kg: string;
+  massa_muscolare_kg: string;
+  acqua_perc: string;
+  acqua_kg: string;
+}
+
+const FIELD_KEYS = [
+  "peso_kg",
+  "massa_grassa_kg",
+  "massa_grassa_perc",
+  "massa_magra_kg",
+  "massa_muscolare_kg",
+  "acqua_perc",
+  "acqua_kg",
+] as const;
+
+const COLUMN_LABEL: Record<(typeof FIELD_KEYS)[number], string> = {
+  peso_kg: "Peso (kg)",
+  massa_grassa_kg: "M. grassa (kg)",
+  massa_grassa_perc: "M. grassa (%)",
+  massa_magra_kg: "M. magra (kg)",
+  massa_muscolare_kg: "M. muscolare (kg)",
+  acqua_perc: "Acqua (%)",
+  acqua_kg: "Acqua (kg)",
+};
+
+let rowIdCounter = 0;
+function emptyRow(): Row {
+  return {
+    id: rowIdCounter++,
+    data: "",
+    peso_kg: "",
+    massa_grassa_kg: "",
+    massa_grassa_perc: "",
+    massa_magra_kg: "",
+    massa_muscolare_kg: "",
+    acqua_perc: "",
+    acqua_kg: "",
+  };
+}
 
 export function BiaImportForm({ patientId }: { patientId: string }) {
-  const [result, setResult] = useState<BiaParseResult | null>(null);
-  const [showText, setShowText] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [rows, setRows] = useState<Row[]>([emptyRow()]);
+  const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [parsing, startParsing] = useTransition();
-  const [confirming, startConfirming] = useTransition();
+  const [success, setSuccess] = useState(false);
 
-  function handleFile(file: File) {
+  function updateRow(id: number, field: keyof Row, value: string) {
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
+  }
+
+  function addRow() {
+    setRows((prev) => [...prev, emptyRow()]);
+  }
+
+  function removeRow(id: number) {
+    setRows((prev) => (prev.length > 1 ? prev.filter((r) => r.id !== id) : prev));
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
     setError(null);
+    setSuccess(false);
+
+    if (!file) {
+      setError("Seleziona il PDF del referto");
+      return;
+    }
+    const validRows = rows.filter((r) => r.data);
+    if (validRows.length === 0) {
+      setError("Compila almeno una riga con la data dell'esame");
+      return;
+    }
+
     const fd = new FormData();
     fd.set("file", file);
-    startParsing(async () => {
+    fd.set("rowsCount", String(validRows.length));
+    validRows.forEach((r, i) => {
+      fd.set(`data-${i}`, r.data);
+      for (const key of FIELD_KEYS) fd.set(`${key}-${i}`, r[key]);
+    });
+
+    startTransition(async () => {
       try {
-        setResult(await parseBiaPdf(patientId, fd));
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Errore durante l'analisi del PDF");
+        await importBiaRows(patientId, fd);
+        setSuccess(true);
+        setRows([emptyRow()]);
+        setFile(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Errore durante l'importazione");
       }
     });
   }
-
-  function handleConfirm(formData: FormData) {
-    if (!result) return;
-    startConfirming(async () => {
-      try {
-        await confirmBiaImport(patientId, result.filePath, formData);
-        setResult(null);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Errore durante il salvataggio");
-      }
-    });
-  }
-
-  function handleCancel() {
-    if (result) discardBiaImport(result.filePath);
-    setResult(null);
-    setError(null);
-  }
-
-  if (!result) {
-    return (
-      <div className="space-y-3 rounded-card border border-border bg-surface p-5 shadow-card">
-        <h3 className="font-semibold">Importa referto BIA (PDF Akern)</h3>
-        <p className="text-sm text-secondary">
-          I valori vengono letti automaticamente dal PDF: potrai correggerli prima di salvare.
-        </p>
-        <input
-          type="file"
-          accept="application/pdf"
-          disabled={parsing}
-          onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
-          className="text-sm"
-        />
-        {parsing && <p className="text-sm text-secondary">Analisi del PDF in corso…</p>}
-        {error && <p className="rounded-lg bg-error-light px-3 py-2 text-sm text-error">{error}</p>}
-      </div>
-    );
-  }
-
-  const { parsed } = result;
 
   return (
-    <form action={handleConfirm} className="space-y-3 rounded-card border border-border bg-surface p-5 shadow-card">
-      <h3 className="font-semibold">Conferma valori BIA</h3>
-      <p className="text-sm text-secondary">Verifica e correggi i valori letti dal PDF prima di salvare.</p>
+    <form onSubmit={handleSubmit} className="space-y-3 rounded-card border border-border bg-surface p-5 shadow-card">
+      <h3 className="font-semibold">Importa referto BIA (PDF Akern)</h3>
+      <p className="text-sm text-secondary">
+        I referti Akern sono grafici, non testo: carica il PDF (resterà allegato in scheda) e trascrivi i valori del
+        grafico, una riga per data di esame.
+      </p>
       <input
-        name="data"
-        type="date"
-        required
-        defaultValue={new Date().toISOString().slice(0, 10)}
-        className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none"
+        type="file"
+        accept="application/pdf"
+        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+        className="text-sm"
       />
-      <div className="grid grid-cols-2 gap-2">
-        <input name="peso_kg" type="number" step="0.1" defaultValue={parsed.peso_kg ?? ""} placeholder="Peso (kg)" className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
-        <input name="massa_grassa_perc" type="number" step="0.1" defaultValue={parsed.massa_grassa_perc ?? ""} placeholder="Massa grassa (%)" className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
-        <input name="massa_grassa_kg" type="number" step="0.1" defaultValue={parsed.massa_grassa_kg ?? ""} placeholder="Massa grassa (kg)" className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
-        <input name="massa_magra_kg" type="number" step="0.1" defaultValue={parsed.massa_magra_kg ?? ""} placeholder="Massa magra (kg)" className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
-        <input name="massa_muscolare_kg" type="number" step="0.1" defaultValue={parsed.massa_muscolare_kg ?? ""} placeholder="Massa muscolare (kg)" className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
-        <input name="acqua_perc" type="number" step="0.1" defaultValue={parsed.acqua_perc ?? ""} placeholder="Acqua (%)" className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
-        <input name="acqua_kg" type="number" step="0.1" defaultValue={parsed.acqua_kg ?? ""} placeholder="Acqua (kg)" className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
-      </div>
-      <textarea name="note" placeholder="Note" rows={2} className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
 
-      <button type="button" onClick={() => setShowText((v) => !v)} className="text-xs font-medium text-brand hover:underline">
-        {showText ? "Nascondi" : "Mostra"} testo estratto dal PDF
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="text-left text-secondary">
+              <th className="pb-1 pr-2 font-medium">Data</th>
+              {FIELD_KEYS.map((key) => (
+                <th key={key} className="pb-1 pr-2 font-medium">
+                  {COLUMN_LABEL[key]}
+                </th>
+              ))}
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.id}>
+                <td className="pb-1.5 pr-2">
+                  <input
+                    type="date"
+                    value={r.data}
+                    onChange={(e) => updateRow(r.id, "data", e.target.value)}
+                    className="w-32 rounded-lg border border-border px-1.5 py-1 text-xs focus:border-brand focus:outline-none"
+                  />
+                </td>
+                {FIELD_KEYS.map((key) => (
+                  <td key={key} className="pb-1.5 pr-2">
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={r[key]}
+                      onChange={(e) => updateRow(r.id, key, e.target.value)}
+                      className="w-16 rounded-lg border border-border px-1.5 py-1 text-xs focus:border-brand focus:outline-none"
+                    />
+                  </td>
+                ))}
+                <td className="pb-1.5">
+                  <button
+                    type="button"
+                    onClick={() => removeRow(r.id)}
+                    aria-label="Rimuovi riga"
+                    className="text-error hover:underline"
+                  >
+                    ✕
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <button type="button" onClick={addRow} className="text-xs font-medium text-brand hover:underline">
+        + Aggiungi riga
       </button>
-      {showText && (
-        <pre className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded-lg bg-background p-3 text-xs text-secondary">{result.textPreview}</pre>
-      )}
 
       {error && <p className="rounded-lg bg-error-light px-3 py-2 text-sm text-error">{error}</p>}
+      {success && <p className="rounded-lg bg-success-light px-3 py-2 text-sm text-success">Misurazioni importate con successo.</p>}
 
-      <div className="flex gap-2">
-        <button type="button" onClick={handleCancel} className="flex-1 rounded-button border border-border py-2 text-sm font-semibold hover:bg-surface-hover">
-          Annulla
-        </button>
-        <button type="submit" disabled={confirming} className="flex-1 rounded-button bg-brand py-2 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50">
-          {confirming ? "Salvataggio…" : "Salva misurazione"}
-        </button>
-      </div>
+      <button
+        type="submit"
+        disabled={pending}
+        className="w-full rounded-button bg-brand py-2 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
+      >
+        {pending ? "Importazione in corso…" : "Importa misurazioni"}
+      </button>
     </form>
   );
 }

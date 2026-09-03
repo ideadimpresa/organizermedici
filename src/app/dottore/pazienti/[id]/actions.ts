@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/session";
-import { extractPdfText, parseBiaFields, type ParsedBiaFields } from "@/lib/pdf";
+import { extractPdfText } from "@/lib/pdf";
 import type { AllergiaTipo, PastoTipo } from "@/lib/types/database";
 
 const DOCS_BUCKET = "documenti-pazienti";
@@ -141,16 +141,16 @@ export async function deletePianoAlimentare(id: string, patientId: string, fileP
   revalidatePath(`/dottore/pazienti/${patientId}`);
 }
 
-export interface BiaParseResult {
-  filePath: string;
-  parsed: ParsedBiaFields;
-  textPreview: string;
+function readNumberIndexed(formData: FormData, key: string, index: number) {
+  return readNumberOrNull(formData, `${key}-${index}`);
 }
 
-// Step 1 of the BIA PDF import: extract text, best-effort parse the known
-// fields, and store the PDF. Returns data for the doctor to review/correct —
-// nothing is written to misurazioni until confirmBiaImport.
-export async function parseBiaPdf(patientId: string, formData: FormData): Promise<BiaParseResult> {
+// Real Akern report PDFs are chart images with no extractable text layer
+// (confirmed against an actual export), so there is nothing to parse
+// automatically. The doctor uploads the PDF for the record (it stays
+// attached to the patient) and transcribes the values shown in the
+// report's graphs, one row per exam date, in a single submit.
+export async function importBiaRows(patientId: string, formData: FormData) {
   const doctorId = await requireDoctor();
   const supabase = await createClient();
 
@@ -158,45 +158,35 @@ export async function parseBiaPdf(patientId: string, formData: FormData): Promis
   if (!file || file.size === 0) throw new Error("Seleziona un file PDF");
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  const text = await extractPdfText(buffer);
-  const parsed = parseBiaFields(text);
-
   const path = `${doctorId}/${patientId}/bia/${Date.now()}-${file.name}`;
   const { error: uploadError } = await supabase.storage.from(DOCS_BUCKET).upload(path, buffer, {
     contentType: "application/pdf",
   });
   if (uploadError) throw new Error(uploadError.message);
 
-  return { filePath: path, parsed, textPreview: text.slice(0, 4000) };
-}
+  const rowsCount = Number(formData.get("rowsCount") || 0);
+  const rows = [];
+  for (let i = 0; i < rowsCount; i++) {
+    const data = String(formData.get(`data-${i}`) || "");
+    if (!data) continue;
+    rows.push({
+      doctor_id: doctorId,
+      patient_id: patientId,
+      data,
+      peso_kg: readNumberIndexed(formData, "peso_kg", i),
+      massa_grassa_kg: readNumberIndexed(formData, "massa_grassa_kg", i),
+      massa_grassa_perc: readNumberIndexed(formData, "massa_grassa_perc", i),
+      massa_magra_kg: readNumberIndexed(formData, "massa_magra_kg", i),
+      massa_muscolare_kg: readNumberIndexed(formData, "massa_muscolare_kg", i),
+      acqua_perc: readNumberIndexed(formData, "acqua_perc", i),
+      acqua_kg: readNumberIndexed(formData, "acqua_kg", i),
+      fonte: "akern" as const,
+      file_path: path,
+    });
+  }
+  if (rows.length === 0) throw new Error("Inserisci almeno una riga con la data compilata");
 
-// Step 2: save the (possibly corrected) values as a misurazione, referencing
-// the PDF already uploaded by parseBiaPdf.
-export async function confirmBiaImport(patientId: string, filePath: string, formData: FormData) {
-  const doctorId = await requireDoctor();
-  const supabase = await createClient();
-
-  const { error } = await supabase.from("misurazioni").insert({
-    doctor_id: doctorId,
-    patient_id: patientId,
-    data: String(formData.get("data") || ""),
-    peso_kg: readNumberOrNull(formData, "peso_kg"),
-    massa_grassa_kg: readNumberOrNull(formData, "massa_grassa_kg"),
-    massa_grassa_perc: readNumberOrNull(formData, "massa_grassa_perc"),
-    massa_magra_kg: readNumberOrNull(formData, "massa_magra_kg"),
-    massa_muscolare_kg: readNumberOrNull(formData, "massa_muscolare_kg"),
-    acqua_perc: readNumberOrNull(formData, "acqua_perc"),
-    acqua_kg: readNumberOrNull(formData, "acqua_kg"),
-    fonte: "akern",
-    file_path: filePath,
-    note: String(formData.get("note") || "") || null,
-  });
+  const { error } = await supabase.from("misurazioni").insert(rows);
   if (error) throw new Error(error.message);
   revalidatePath(`/dottore/pazienti/${patientId}`);
-}
-
-export async function discardBiaImport(filePath: string) {
-  await requireDoctor();
-  const supabase = await createClient();
-  await supabase.storage.from(DOCS_BUCKET).remove([filePath]);
 }
