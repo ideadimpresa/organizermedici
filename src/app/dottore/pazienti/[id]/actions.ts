@@ -203,6 +203,7 @@ export async function uploadRefertoBia(patientId: string, formData: FormData) {
   // precondition for saving it — never let a rendering failure (unusual
   // PDF, resource limits, ...) take down the whole upload.
   const imagePaths: string[] = [];
+  let renderErrorNote: string | null = null;
   try {
     const images = await renderPdfToImages(buffer);
     for (let i = 0; i < images.length; i++) {
@@ -215,15 +216,20 @@ export async function uploadRefertoBia(patientId: string, formData: FormData) {
     }
   } catch (err) {
     console.error("renderPdfToImages failed for referto BIA:", err);
+    // TEMPORARY diagnostic: surface the failure in the note field since we
+    // have no other visibility into production logs for this project. Remove
+    // once the rendering issue is confirmed fixed.
+    renderErrorNote = `[debug rendering] ${err instanceof Error ? err.stack || err.message : String(err)}`.slice(0, 2000);
   }
 
+  const userNote = String(formData.get("note") || "") || null;
   const { error } = await supabase.from("referti_bia").insert({
     doctor_id: doctorId,
     patient_id: patientId,
     data_esame: String(formData.get("data_esame") || "") || null,
     file_path: `${basePath}.pdf`,
     image_paths: imagePaths,
-    note: String(formData.get("note") || "") || null,
+    note: [userNote, renderErrorNote].filter(Boolean).join("\n\n") || null,
   });
   if (error) throw new Error(error.message);
   revalidatePath(`/dottore/pazienti/${patientId}`);
