@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { EntryDeleteButton } from "@/components/entry-delete-button";
 import { WeightTrendChart } from "@/components/weight-trend-chart";
-import { BiaImportForm } from "@/components/bia-import-form";
+import { BiaValuesForm } from "@/components/bia-values-form";
+import { RefertoBiaCard } from "@/components/referto-bia-card";
 import { MealPlanCard } from "@/components/meal-plan-card";
 import { sortPlansByDate, labelPlanRange } from "@/lib/meal-plan";
 import {
@@ -16,6 +17,8 @@ import {
   deleteAllergia,
   uploadPianoAlimentare,
   deletePianoAlimentare,
+  uploadRefertoBia,
+  deleteRefertoBia,
 } from "./actions";
 
 const PASTO_LABEL: Record<string, string> = {
@@ -41,11 +44,12 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
     .single();
   if (!patient) notFound();
 
-  const [{ data: misurazioni }, { data: diario }, { data: allergie }, { data: piani }] = await Promise.all([
+  const [{ data: misurazioni }, { data: diario }, { data: allergie }, { data: piani }, { data: referti }] = await Promise.all([
     supabase.from("misurazioni").select("*").eq("patient_id", id).order("data", { ascending: true }),
     supabase.from("diario_alimentare").select("*").eq("patient_id", id).order("data", { ascending: false }).limit(30),
     supabase.from("allergeni_intolleranze").select("*").eq("patient_id", id).order("created_at", { ascending: false }),
     supabase.from("piani_alimentari").select("*").eq("patient_id", id).order("created_at", { ascending: false }),
+    supabase.from("referti_bia").select("*").eq("patient_id", id).order("created_at", { ascending: false }),
   ]);
 
   const weightPoints = (misurazioni || [])
@@ -67,6 +71,18 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
         const { data } = await supabase.storage.from(DOCS_BUCKET).createSignedUrl(m.file_path as string, 3600);
         if (data?.signedUrl) misurazioniFileUrls.set(m.id, data.signedUrl);
       })
+  );
+
+  const refertiWithUrls = await Promise.all(
+    (referti || []).map(async (r) => {
+      const [{ data: pdfData }, imageUrls] = await Promise.all([
+        supabase.storage.from(DOCS_BUCKET).createSignedUrl(r.file_path, 3600),
+        Promise.all(
+          r.image_paths.map(async (p) => (await supabase.storage.from(DOCS_BUCKET).createSignedUrl(p, 3600)).data?.signedUrl ?? null)
+        ),
+      ]);
+      return { ...r, pdfSignedUrl: pdfData?.signedUrl ?? null, imageSignedUrls: imageUrls.filter((u): u is string => !!u) };
+    })
   );
 
   return (
@@ -111,7 +127,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
               <button className="w-full rounded-button bg-brand py-2 text-sm font-semibold text-white hover:bg-brand-dark">Salva misurazione</button>
             </form>
 
-            <BiaImportForm patientId={id} />
+            <BiaValuesForm patientId={id} />
           </div>
         </div>
 
@@ -157,6 +173,43 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
             </table>
           </div>
         )}
+      </section>
+
+      <section>
+        <h2 className="font-semibold">Referti BIA</h2>
+        <div className="mt-3 grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2 space-y-3">
+            {refertiWithUrls.map((r) => (
+              <RefertoBiaCard
+                key={r.id}
+                dataEsame={r.data_esame}
+                note={r.note}
+                imageSignedUrls={r.imageSignedUrls}
+                pdfSignedUrl={r.pdfSignedUrl}
+                actions={<EntryDeleteButton action={deleteRefertoBia.bind(null, r.id, id, r.file_path, r.image_paths)} />}
+              />
+            ))}
+            {refertiWithUrls.length === 0 && (
+              <p className="rounded-card border border-dashed border-border bg-surface p-8 text-center text-secondary">
+                Nessun referto caricato.
+              </p>
+            )}
+          </div>
+          <form action={uploadRefertoBia.bind(null, id)} className="space-y-3 rounded-card border border-border bg-surface p-5 shadow-card">
+            <h3 className="font-semibold">Carica referto</h3>
+            <p className="text-sm text-secondary">
+              Il PDF viene mostrato come immagine, senza dover inserire alcun dato.
+            </p>
+            <input
+              name="data_esame"
+              type="date"
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none"
+            />
+            <input name="file" type="file" accept="application/pdf" required className="text-sm" />
+            <textarea name="note" placeholder="Note" rows={2} className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
+            <button className="w-full rounded-button bg-brand py-2 text-sm font-semibold text-white hover:bg-brand-dark">Carica referto</button>
+          </form>
+        </div>
       </section>
 
       <section>

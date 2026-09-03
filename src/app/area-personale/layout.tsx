@@ -10,6 +10,7 @@ const NAV = [
   { href: "/area-personale/diario", label: "Diario alimentare" },
   { href: "/area-personale/allergie", label: "Allergie e intolleranze" },
   { href: "/area-personale/piano", label: "Piano alimentare" },
+  { href: "/area-personale/referti", label: "Referti BIA" },
   { href: "/account/password", label: "Cambia password" },
 ];
 

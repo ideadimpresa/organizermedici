@@ -332,6 +332,25 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["misurazioni"]["Row"]>;
         Relationships: [];
       };
+      referti_bia: {
+        Row: {
+          id: string;
+          doctor_id: string;
+          patient_id: string;
+          data_esame: string | null;
+          file_path: string;
+          image_paths: string[];
+          note: string | null;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["referti_bia"]["Row"]> & {
+          doctor_id: string;
+          patient_id: string;
+          file_path: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["referti_bia"]["Row"]>;
+        Relationships: [];
+      };
       diario_alimentare: {
         Row: {
           id: string;

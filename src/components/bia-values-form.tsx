@@ -50,8 +50,7 @@ function emptyRow(): Row {
   };
 }
 
-export function BiaImportForm({ patientId }: { patientId: string }) {
-  const [file, setFile] = useState<File | null>(null);
+export function BiaValuesForm({ patientId }: { patientId: string }) {
   const [rows, setRows] = useState<Row[]>([emptyRow()]);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -74,10 +73,6 @@ export function BiaImportForm({ patientId }: { patientId: string }) {
     setError(null);
     setSuccess(false);
 
-    if (!file) {
-      setError("Seleziona il PDF del referto");
-      return;
-    }
     const validRows = rows.filter((r) => r.data);
     if (validRows.length === 0) {
       setError("Compila almeno una riga con la data dell'esame");
@@ -85,7 +80,6 @@ export function BiaImportForm({ patientId }: { patientId: string }) {
     }
 
     const fd = new FormData();
-    fd.set("file", file);
     fd.set("rowsCount", String(validRows.length));
     validRows.forEach((r, i) => {
       fd.set(`data-${i}`, r.data);
@@ -97,26 +91,20 @@ export function BiaImportForm({ patientId }: { patientId: string }) {
         await importBiaRows(patientId, fd);
         setSuccess(true);
         setRows([emptyRow()]);
-        setFile(null);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Errore durante l'importazione");
+        setError(err instanceof Error ? err.message : "Errore durante il salvataggio");
       }
     });
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3 rounded-card border border-border bg-surface p-5 shadow-card">
-      <h3 className="font-semibold">Importa referto BIA (PDF Akern)</h3>
+      <h3 className="font-semibold">Aggiorna i grafici (facoltativo)</h3>
       <p className="text-sm text-secondary">
-        I referti Akern sono grafici, non testo: carica il PDF (resterà allegato in scheda) e trascrivi i valori del
-        grafico, una riga per data di esame.
+        Per far comparire l&apos;andamento nel tempo nei grafici, trascrivi qui i valori che leggi in un referto —
+        una riga per data di esame. Non è necessario per archiviare il referto: puoi caricarlo come immagine qui
+        sotto anche senza compilare questa tabella.
       </p>
-      <input
-        type="file"
-        accept="application/pdf"
-        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-        className="text-sm"
-      />
 
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
@@ -174,14 +162,14 @@ export function BiaImportForm({ patientId }: { patientId: string }) {
       </button>
 
       {error && <p className="rounded-lg bg-error-light px-3 py-2 text-sm text-error">{error}</p>}
-      {success && <p className="rounded-lg bg-success-light px-3 py-2 text-sm text-success">Misurazioni importate con successo.</p>}
+      {success && <p className="rounded-lg bg-success-light px-3 py-2 text-sm text-success">Misurazioni salvate.</p>}
 
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-button bg-brand py-2 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
+        className="w-full rounded-button border border-brand py-2 text-sm font-semibold text-brand hover:bg-brand-light disabled:opacity-50"
       >
-        {pending ? "Importazione in corso…" : "Importa misurazioni"}
+        {pending ? "Salvataggio…" : "Salva valori"}
       </button>
     </form>
   );

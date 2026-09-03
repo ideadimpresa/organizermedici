@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { extractPdfText } from "@/lib/pdf";
+import { renderPdfToImages } from "@/lib/pdf-image";
 import type { AllergiaTipo, PastoTipo } from "@/lib/types/database";
 
 const DOCS_BUCKET = "documenti-pazienti";
@@ -145,24 +146,14 @@ function readNumberIndexed(formData: FormData, key: string, index: number) {
   return readNumberOrNull(formData, `${key}-${index}`);
 }
 
-// Real Akern report PDFs are chart images with no extractable text layer
-// (confirmed against an actual export), so there is nothing to parse
-// automatically. The doctor uploads the PDF for the record (it stays
-// attached to the patient) and transcribes the values shown in the
-// report's graphs, one row per exam date, in a single submit.
+// Real Akern report PDFs are chart images with no extractable text or
+// structured data (confirmed against an actual export) — this is a purely
+// optional, manual backfill for doctors who also want the numeric trend
+// charts populated. It doesn't touch file storage at all; the report itself
+// is uploaded separately via uploadRefertoBia below.
 export async function importBiaRows(patientId: string, formData: FormData) {
   const doctorId = await requireDoctor();
   const supabase = await createClient();
-
-  const file = formData.get("file") as File | null;
-  if (!file || file.size === 0) throw new Error("Seleziona un file PDF");
-
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const path = `${doctorId}/${patientId}/bia/${Date.now()}-${file.name}`;
-  const { error: uploadError } = await supabase.storage.from(DOCS_BUCKET).upload(path, buffer, {
-    contentType: "application/pdf",
-  });
-  if (uploadError) throw new Error(uploadError.message);
 
   const rowsCount = Number(formData.get("rowsCount") || 0);
   const rows = [];
@@ -181,12 +172,61 @@ export async function importBiaRows(patientId: string, formData: FormData) {
       acqua_perc: readNumberIndexed(formData, "acqua_perc", i),
       acqua_kg: readNumberIndexed(formData, "acqua_kg", i),
       fonte: "akern" as const,
-      file_path: path,
     });
   }
   if (rows.length === 0) throw new Error("Inserisci almeno una riga con la data compilata");
 
   const { error } = await supabase.from("misurazioni").insert(rows);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/dottore/pazienti/${patientId}`);
+}
+
+// Uploads a BIA report PDF and renders it to image(s) so it's viewable
+// directly in the app — no data entry required. The doctor can optionally
+// also use importBiaRows above to backfill the numeric trend charts.
+export async function uploadRefertoBia(patientId: string, formData: FormData) {
+  const doctorId = await requireDoctor();
+  const supabase = await createClient();
+
+  const file = formData.get("file") as File | null;
+  if (!file || file.size === 0) throw new Error("Seleziona un file PDF");
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const basePath = `${doctorId}/${patientId}/bia/${Date.now()}`;
+
+  const { error: uploadError } = await supabase.storage.from(DOCS_BUCKET).upload(`${basePath}.pdf`, buffer, {
+    contentType: "application/pdf",
+  });
+  if (uploadError) throw new Error(uploadError.message);
+
+  const images = await renderPdfToImages(buffer);
+  const imagePaths: string[] = [];
+  for (let i = 0; i < images.length; i++) {
+    const imagePath = `${basePath}-p${i + 1}.png`;
+    const { error: imgError } = await supabase.storage.from(DOCS_BUCKET).upload(imagePath, images[i], {
+      contentType: "image/png",
+    });
+    if (imgError) throw new Error(imgError.message);
+    imagePaths.push(imagePath);
+  }
+
+  const { error } = await supabase.from("referti_bia").insert({
+    doctor_id: doctorId,
+    patient_id: patientId,
+    data_esame: String(formData.get("data_esame") || "") || null,
+    file_path: `${basePath}.pdf`,
+    image_paths: imagePaths,
+    note: String(formData.get("note") || "") || null,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath(`/dottore/pazienti/${patientId}`);
+}
+
+export async function deleteRefertoBia(id: string, patientId: string, filePath: string, imagePaths: string[]) {
+  await requireDoctor();
+  const supabase = await createClient();
+  await supabase.storage.from(DOCS_BUCKET).remove([filePath, ...imagePaths]);
+  const { error } = await supabase.from("referti_bia").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath(`/dottore/pazienti/${patientId}`);
 }

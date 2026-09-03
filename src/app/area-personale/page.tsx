@@ -19,7 +19,7 @@ export default async function PatientDashboardPage() {
   const { data: patientRows } = await supabase.from("patients").select("id").eq("profile_id", user?.id ?? "");
   const patientIds = (patientRows || []).map((p) => p.id);
 
-  const [{ data: nextAppointments }, { data: misurazioni }, { data: allergie }, { data: lastDiario }, { data: piani }] =
+  const [{ data: nextAppointments }, { data: misurazioni }, { data: allergie }, { data: lastDiario }, { data: piani }, { data: referti }] =
     patientIds.length
       ? await Promise.all([
           supabase
@@ -39,8 +39,9 @@ export default async function PatientDashboardPage() {
             .order("data", { ascending: false })
             .limit(1),
           supabase.from("piani_alimentari").select("id, titolo, data_inizio, data_fine").in("patient_id", patientIds).order("created_at", { ascending: false }).limit(1),
+          supabase.from("referti_bia").select("id, data_esame").in("patient_id", patientIds).order("created_at", { ascending: false }).limit(1),
         ])
-      : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }, { data: [] }];
+      : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }, { data: [] }, { data: [] }];
 
   const weightPoints = (misurazioni || []).filter((m) => m.peso_kg != null).map((m) => ({ data: m.data, value: m.peso_kg as number }));
   const fatPercPoints = (misurazioni || []).filter((m) => m.massa_grassa_perc != null).map((m) => ({ data: m.data, value: m.massa_grassa_perc as number }));
@@ -51,6 +52,7 @@ export default async function PatientDashboardPage() {
   const nextAppointmentDoctor = nextAppointment?.doctors as unknown as { display_name: string } | undefined;
   const lastDiarioEntry = (lastDiario || [])[0];
   const activePlan = (piani || [])[0];
+  const lastReferto = (referti || [])[0];
 
   return (
     <div className="space-y-8 pb-10">
@@ -143,7 +145,7 @@ export default async function PatientDashboardPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
             <Link href="/area-personale/diario" className="rounded-card border border-border bg-surface p-5 shadow-card hover:shadow-md">
               <h2 className="font-semibold">Diario alimentare</h2>
               {lastDiarioEntry ? (
@@ -163,6 +165,16 @@ export default async function PatientDashboardPage() {
                 <p className="mt-2 text-sm text-secondary">{activePlan.titolo}</p>
               ) : (
                 <p className="mt-2 text-sm text-secondary">Nessun piano caricato dal tuo nutrizionista.</p>
+              )}
+            </Link>
+            <Link href="/area-personale/referti" className="rounded-card border border-border bg-surface p-5 shadow-card hover:shadow-md">
+              <h2 className="font-semibold">Referti BIA</h2>
+              {lastReferto ? (
+                <p className="mt-2 text-sm text-secondary">
+                  {lastReferto.data_esame ? `Ultimo referto del ${new Date(lastReferto.data_esame).toLocaleDateString("it-IT")}` : "Ultimo referto caricato"}
+                </p>
+              ) : (
+                <p className="mt-2 text-sm text-secondary">Nessun referto caricato dal tuo nutrizionista.</p>
               )}
             </Link>
           </div>
