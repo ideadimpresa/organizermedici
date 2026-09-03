@@ -31,7 +31,7 @@ export function RefertoBiaCard({
           {actions}
         </div>
       </div>
-      {imageSignedUrls.length > 0 && (
+      {imageSignedUrls.length > 0 ? (
         <div className="mt-3 space-y-3">
           {imageSignedUrls.map((url, i) => (
             // Signed URLs are per-request and short-lived, so next/image's
@@ -41,6 +41,8 @@ export function RefertoBiaCard({
             <img key={i} src={url} alt={`Pagina ${i + 1} del referto BIA`} className="w-full rounded-lg border border-border" />
           ))}
         </div>
+      ) : (
+        pdfSignedUrl && <p className="mt-3 text-sm text-muted">Anteprima non disponibile: apri il PDF per consultarlo.</p>
       )}
     </div>
   );

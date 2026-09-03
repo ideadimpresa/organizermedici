@@ -199,15 +199,22 @@ export async function uploadRefertoBia(patientId: string, formData: FormData) {
   });
   if (uploadError) throw new Error(uploadError.message);
 
-  const images = await renderPdfToImages(buffer);
+  // Rendering is a nice-to-have on top of the archived PDF, not a
+  // precondition for saving it — never let a rendering failure (unusual
+  // PDF, resource limits, ...) take down the whole upload.
   const imagePaths: string[] = [];
-  for (let i = 0; i < images.length; i++) {
-    const imagePath = `${basePath}-p${i + 1}.png`;
-    const { error: imgError } = await supabase.storage.from(DOCS_BUCKET).upload(imagePath, images[i], {
-      contentType: "image/png",
-    });
-    if (imgError) throw new Error(imgError.message);
-    imagePaths.push(imagePath);
+  try {
+    const images = await renderPdfToImages(buffer);
+    for (let i = 0; i < images.length; i++) {
+      const imagePath = `${basePath}-p${i + 1}.png`;
+      const { error: imgError } = await supabase.storage.from(DOCS_BUCKET).upload(imagePath, images[i], {
+        contentType: "image/png",
+      });
+      if (imgError) throw new Error(imgError.message);
+      imagePaths.push(imagePath);
+    }
+  } catch (err) {
+    console.error("renderPdfToImages failed for referto BIA:", err);
   }
 
   const { error } = await supabase.from("referti_bia").insert({
