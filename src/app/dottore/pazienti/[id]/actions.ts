@@ -9,6 +9,22 @@ import type { AllergiaTipo, PastoTipo } from "@/lib/types/database";
 
 const DOCS_BUCKET = "documenti-pazienti";
 
+export async function sendMessaggioMedico(patientId: string, formData: FormData) {
+  const doctorId = await requireDoctor();
+  const supabase = await createClient();
+  const testo = String(formData.get("testo") || "").trim();
+  if (!testo) return;
+
+  const { error } = await supabase.from("messaggi").insert({
+    doctor_id: doctorId,
+    patient_id: patientId,
+    mittente: "medico",
+    testo,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath(`/dottore/pazienti/${patientId}`);
+}
+
 async function requireDoctor() {
   const user = await getCurrentUser();
   if (!user?.doctorId) throw new Error("Non autorizzato");
@@ -47,6 +63,37 @@ export async function deleteMisurazione(id: string, patientId: string) {
   await requireDoctor();
   const supabase = await createClient();
   const { error } = await supabase.from("misurazioni").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/dottore/pazienti/${patientId}`);
+}
+
+// Manual fallback until the wearable band + its sync are wired up — the
+// same attivita_giornaliera rows this will eventually write automatically.
+export async function addAttivitaGiornaliera(patientId: string, formData: FormData) {
+  const doctorId = await requireDoctor();
+  const supabase = await createClient();
+
+  const { error } = await supabase.from("attivita_giornaliera").upsert(
+    {
+      doctor_id: doctorId,
+      patient_id: patientId,
+      data: String(formData.get("data") || ""),
+      passi: readNumberOrNull(formData, "passi"),
+      distanza_km: readNumberOrNull(formData, "distanza_km"),
+      calorie_totali: readNumberOrNull(formData, "calorie_totali"),
+      calorie_attive: readNumberOrNull(formData, "calorie_attive"),
+      fonte: "manuale",
+    },
+    { onConflict: "patient_id,data" }
+  );
+  if (error) throw new Error(error.message);
+  revalidatePath(`/dottore/pazienti/${patientId}`);
+}
+
+export async function deleteAttivitaGiornaliera(id: string, patientId: string) {
+  await requireDoctor();
+  const supabase = await createClient();
+  const { error } = await supabase.from("attivita_giornaliera").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath(`/dottore/pazienti/${patientId}`);
 }

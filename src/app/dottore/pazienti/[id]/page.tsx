@@ -7,7 +7,11 @@ import { WeightTrendChart } from "@/components/weight-trend-chart";
 import { BiaValuesForm } from "@/components/bia-values-form";
 import { RefertoBiaCard } from "@/components/referto-bia-card";
 import { MealPlanCard } from "@/components/meal-plan-card";
+import { MessageThread } from "@/components/message-thread";
+import { StatTile } from "@/components/stat-tile";
 import { sortPlansByDate, labelPlanRange } from "@/lib/meal-plan";
+import { computeStreakDays, computeWeeklyAdherence } from "@/lib/adherence";
+import { averageOverLastDays } from "@/lib/activity";
 import {
   addMisurazione,
   deleteMisurazione,
@@ -19,6 +23,9 @@ import {
   deletePianoAlimentare,
   uploadRefertoBia,
   deleteRefertoBia,
+  sendMessaggioMedico,
+  addAttivitaGiornaliera,
+  deleteAttivitaGiornaliera,
 } from "./actions";
 
 const PASTO_LABEL: Record<string, string> = {
@@ -44,17 +51,28 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
     .single();
   if (!patient) notFound();
 
-  const [{ data: misurazioni }, { data: diario }, { data: allergie }, { data: piani }, { data: referti }] = await Promise.all([
-    supabase.from("misurazioni").select("*").eq("patient_id", id).order("data", { ascending: true }),
-    supabase.from("diario_alimentare").select("*").eq("patient_id", id).order("data", { ascending: false }).limit(30),
-    supabase.from("allergeni_intolleranze").select("*").eq("patient_id", id).order("created_at", { ascending: false }),
-    supabase.from("piani_alimentari").select("*").eq("patient_id", id).order("created_at", { ascending: false }),
-    supabase.from("referti_bia").select("*").eq("patient_id", id).order("created_at", { ascending: false }),
-  ]);
+  const [{ data: misurazioni }, { data: diario }, { data: allergie }, { data: piani }, { data: referti }, { data: messaggi }, { data: dispositivo }, { data: attivita }] =
+    await Promise.all([
+      supabase.from("misurazioni").select("*").eq("patient_id", id).order("data", { ascending: true }),
+      supabase.from("diario_alimentare").select("*").eq("patient_id", id).order("data", { ascending: false }).limit(30),
+      supabase.from("allergeni_intolleranze").select("*").eq("patient_id", id).order("created_at", { ascending: false }),
+      supabase.from("piani_alimentari").select("*").eq("patient_id", id).order("created_at", { ascending: false }),
+      supabase.from("referti_bia").select("*").eq("patient_id", id).order("created_at", { ascending: false }),
+      supabase.from("messaggi").select("*").eq("patient_id", id).order("created_at", { ascending: true }),
+      supabase.from("dispositivi_wearable").select("*").eq("patient_id", id).maybeSingle(),
+      supabase.from("attivita_giornaliera").select("*").eq("patient_id", id).order("data", { ascending: true }).limit(60),
+    ]);
+
+  const streakGiorni = computeStreakDays((diario || []).map((d) => d.data));
+  const aderenzaSettimanale = computeWeeklyAdherence((diario || []).map((d) => ({ data: d.data, aderenza: d.aderenza })));
 
   const weightPoints = (misurazioni || [])
     .filter((m) => m.peso_kg != null)
     .map((m) => ({ data: m.data, value: m.peso_kg as number }));
+
+  const stepsPoints = (attivita || []).filter((a) => a.passi != null).map((a) => ({ data: a.data, value: a.passi as number }));
+  const passiMedi7gg = averageOverLastDays((attivita || []).map((a) => ({ data: a.data, value: a.passi })), 7);
+  const calorieMedie7gg = averageOverLastDays((attivita || []).map((a) => ({ data: a.data, value: a.calorie_totali })), 7);
 
   const pianiWithUrl = await Promise.all(
     sortPlansByDate(piani || []).map(async (p) => {
@@ -97,6 +115,104 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
           {patient.phone ? ` · ${patient.phone}` : ""}
         </p>
       </div>
+
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-2">
+        <StatTile label="Streak diario" value={String(streakGiorni)} unit={streakGiorni === 1 ? "giorno" : "giorni"} />
+        <StatTile
+          label="Aderenza (7 gg)"
+          value={aderenzaSettimanale != null ? String(aderenzaSettimanale) : "—"}
+          unit={aderenzaSettimanale != null ? "%" : undefined}
+          subtext={aderenzaSettimanale == null ? "Nessun dato recente" : undefined}
+        />
+      </div>
+
+      <section>
+        <h2 className="font-semibold">Messaggi</h2>
+        <div className="mt-3 space-y-3">
+          <MessageThread messaggi={messaggi || []} viewAs="medico" />
+          <form action={sendMessaggioMedico.bind(null, id)} className="flex gap-2">
+            <input
+              name="testo"
+              required
+              placeholder="Scrivi un messaggio al paziente…"
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none"
+            />
+            <button className="shrink-0 rounded-button bg-brand px-5 py-2 text-sm font-semibold text-white hover:bg-brand-dark">
+              Invia
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <section>
+        <h2 className="font-semibold">Attività</h2>
+        <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <StatTile label="Passi medi (7gg)" value={passiMedi7gg != null ? String(passiMedi7gg) : "—"} />
+          <StatTile label="Calorie medie (7gg)" value={calorieMedie7gg != null ? String(calorieMedie7gg) : "—"} unit={calorieMedie7gg != null ? "kcal" : undefined} />
+          <StatTile
+            label="Dispositivo"
+            value={dispositivo ? (dispositivo.stato === "attivo" ? "Collegato" : "Inattivo") : "Nessuno"}
+            subtext={dispositivo?.modello || undefined}
+          />
+          <StatTile
+            label="Ultima sincronizzazione"
+            value={dispositivo?.ultima_sincronizzazione ? new Date(dispositivo.ultima_sincronizzazione).toLocaleDateString("it-IT") : "—"}
+          />
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2 rounded-card border border-border border-l-4 border-l-teal bg-surface p-5 shadow-card">
+            <WeightTrendChart points={stepsPoints} label="Passi" unit="" />
+          </div>
+          <form action={addAttivitaGiornaliera.bind(null, id)} className="space-y-3 rounded-card border border-border bg-surface p-5 shadow-card">
+            <h3 className="font-semibold">Inserimento manuale</h3>
+            <p className="text-sm text-secondary">In attesa del braccialetto, puoi registrare l&apos;attività a mano.</p>
+            <input
+              name="data"
+              type="date"
+              required
+              defaultValue={new Date().toISOString().slice(0, 10)}
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none"
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <input name="passi" type="number" placeholder="Passi" className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
+              <input name="distanza_km" type="number" step="0.1" placeholder="Distanza (km)" className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
+              <input name="calorie_totali" type="number" placeholder="Calorie totali" className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
+              <input name="calorie_attive" type="number" placeholder="Calorie attive" className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
+            </div>
+            <button className="w-full rounded-button bg-brand py-2 text-sm font-semibold text-white hover:bg-brand-dark">Salva giornata</button>
+          </form>
+        </div>
+
+        {attivita && attivita.length > 0 && (
+          <div className="mt-4 overflow-x-auto rounded-card border border-border bg-surface shadow-card">
+            <table className="w-full text-sm">
+              <thead className="border-b border-border bg-background text-left text-secondary">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Data</th>
+                  <th className="px-4 py-3 font-medium">Passi</th>
+                  <th className="px-4 py-3 font-medium">Calorie</th>
+                  <th className="px-4 py-3 font-medium">Fonte</th>
+                  <th className="px-4 py-3 font-medium"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...attivita].reverse().slice(0, 14).map((a) => (
+                  <tr key={a.id} className="border-b border-border last:border-0">
+                    <td className="px-4 py-3">{new Date(a.data).toLocaleDateString("it-IT")}</td>
+                    <td className="px-4 py-3">{a.passi ?? "—"}</td>
+                    <td className="px-4 py-3 text-secondary">{a.calorie_totali ?? "—"}</td>
+                    <td className="px-4 py-3 text-secondary">{a.fonte}</td>
+                    <td className="px-4 py-3 text-right">
+                      <EntryDeleteButton action={deleteAttivitaGiornaliera.bind(null, a.id, id)} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
       <section>
         <h2 className="font-semibold">Andamento peso</h2>

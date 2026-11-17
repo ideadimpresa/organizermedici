@@ -7,6 +7,8 @@ import { DashboardMobileNav } from "@/components/dashboard-mobile-nav";
 
 const NAV = [
   { href: "/area-personale", label: "Dashboard" },
+  { href: "/area-personale/messaggi", label: "Messaggi" },
+  { href: "/area-personale/attivita", label: "Attività" },
   { href: "/area-personale/diario", label: "Diario alimentare" },
   { href: "/area-personale/allergie", label: "Allergie e intolleranze" },
   { href: "/area-personale/piano", label: "Piano alimentare" },

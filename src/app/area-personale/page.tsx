@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { StatTile } from "@/components/stat-tile";
 import { WeightTrendChart } from "@/components/weight-trend-chart";
+import { computeStreakDays, computeWeeklyAdherence } from "@/lib/adherence";
+import { averageOverLastDays } from "@/lib/activity";
 
 const PASTO_LABEL: Record<string, string> = {
   colazione: "Colazione",
@@ -19,7 +21,7 @@ export default async function PatientDashboardPage() {
   const { data: patientRows } = await supabase.from("patients").select("id").eq("profile_id", user?.id ?? "");
   const patientIds = (patientRows || []).map((p) => p.id);
 
-  const [{ data: nextAppointments }, { data: misurazioni }, { data: allergie }, { data: lastDiario }, { data: piani }, { data: referti }] =
+  const [{ data: nextAppointments }, { data: misurazioni }, { data: allergie }, { data: diarioRecent }, { data: piani }, { data: referti }, { data: lastMessaggio }, { data: attivitaRecent }] =
     patientIds.length
       ? await Promise.all([
           supabase
@@ -37,11 +39,13 @@ export default async function PatientDashboardPage() {
             .select("*")
             .in("patient_id", patientIds)
             .order("data", { ascending: false })
-            .limit(1),
+            .limit(35),
           supabase.from("piani_alimentari").select("id, titolo, data_inizio, data_fine").in("patient_id", patientIds).order("created_at", { ascending: false }).limit(1),
           supabase.from("referti_bia").select("id, data_esame").in("patient_id", patientIds).order("created_at", { ascending: false }).limit(1),
+          supabase.from("messaggi").select("*").in("patient_id", patientIds).order("created_at", { ascending: false }).limit(1),
+          supabase.from("attivita_giornaliera").select("data, passi, calorie_totali").in("patient_id", patientIds).order("data", { ascending: false }).limit(7),
         ])
-      : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }, { data: [] }, { data: [] }];
+      : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }, { data: [] }, { data: [] }, { data: [] }, { data: [] }];
 
   const weightPoints = (misurazioni || []).filter((m) => m.peso_kg != null).map((m) => ({ data: m.data, value: m.peso_kg as number }));
   const fatPercPoints = (misurazioni || []).filter((m) => m.massa_grassa_perc != null).map((m) => ({ data: m.data, value: m.massa_grassa_perc as number }));
@@ -50,9 +54,13 @@ export default async function PatientDashboardPage() {
   const latestFatPerc = fatPercPoints[fatPercPoints.length - 1];
   const nextAppointment = (nextAppointments || [])[0];
   const nextAppointmentDoctor = nextAppointment?.doctors as unknown as { display_name: string } | undefined;
-  const lastDiarioEntry = (lastDiario || [])[0];
+  const lastDiarioEntry = (diarioRecent || [])[0];
   const activePlan = (piani || [])[0];
   const lastReferto = (referti || [])[0];
+  const streakGiorni = computeStreakDays((diarioRecent || []).map((d) => d.data));
+  const aderenzaSettimanale = computeWeeklyAdherence((diarioRecent || []).map((d) => ({ data: d.data, aderenza: d.aderenza })));
+  const ultimoMessaggio = (lastMessaggio || [])[0];
+  const passiMedi7gg = averageOverLastDays((attivitaRecent || []).map((a) => ({ data: a.data, value: a.passi })), 7);
 
   return (
     <div className="space-y-8 pb-10">
@@ -70,7 +78,7 @@ export default async function PatientDashboardPage() {
         </p>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
             <StatTile
               label="Peso attuale"
               value={latestWeight ? String(latestWeight.value) : "—"}
@@ -94,10 +102,23 @@ export default async function PatientDashboardPage() {
                   : "Nessuno programmato"
               }
             />
+            <StatTile label="Allergie e intolleranze" value={String((allergie || []).length)} subtext="registrate" />
             <StatTile
-              label="Allergie e intolleranze"
-              value={String((allergie || []).length)}
-              subtext="registrate"
+              label="Streak diario"
+              value={String(streakGiorni)}
+              unit={streakGiorni === 1 ? "giorno" : "giorni"}
+              subtext={streakGiorni > 0 ? "di fila 🔥" : "inizia oggi"}
+            />
+            <StatTile
+              label="Aderenza (7 gg)"
+              value={aderenzaSettimanale != null ? String(aderenzaSettimanale) : "—"}
+              unit={aderenzaSettimanale != null ? "%" : undefined}
+              subtext={aderenzaSettimanale == null ? "Nessun dato recente" : undefined}
+            />
+            <StatTile
+              label="Passi medi (7gg)"
+              value={passiMedi7gg != null ? String(passiMedi7gg) : "—"}
+              subtext={passiMedi7gg == null ? "Nessun braccialetto collegato" : undefined}
             />
           </div>
 
@@ -145,7 +166,26 @@ export default async function PatientDashboardPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
+            <Link href="/area-personale/messaggi" className="rounded-card border border-border bg-surface p-5 shadow-card hover:shadow-md">
+              <h2 className="font-semibold">Messaggi</h2>
+              {ultimoMessaggio ? (
+                <>
+                  <p className="mt-2 text-sm text-secondary">{ultimoMessaggio.mittente === "medico" ? "Dal tuo nutrizionista" : "Inviato da te"}</p>
+                  <p className="mt-1 line-clamp-2 text-sm text-foreground">{ultimoMessaggio.testo}</p>
+                </>
+              ) : (
+                <p className="mt-2 text-sm text-secondary">Nessun messaggio ancora. Scrivi al tuo nutrizionista →</p>
+              )}
+            </Link>
+            <Link href="/area-personale/attivita" className="rounded-card border border-border bg-surface p-5 shadow-card hover:shadow-md">
+              <h2 className="font-semibold">Attività</h2>
+              {passiMedi7gg != null ? (
+                <p className="mt-2 text-sm text-secondary">{passiMedi7gg} passi medi (7gg)</p>
+              ) : (
+                <p className="mt-2 text-sm text-secondary">Nessun braccialetto collegato ancora.</p>
+              )}
+            </Link>
             <Link href="/area-personale/diario" className="rounded-card border border-border bg-surface p-5 shadow-card hover:shadow-md">
               <h2 className="font-semibold">Diario alimentare</h2>
               {lastDiarioEntry ? (

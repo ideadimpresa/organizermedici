@@ -13,8 +13,10 @@ export type SocialPlatform = "instagram" | "facebook";
 export type SocialPostStatus = "pending" | "posted" | "failed";
 export type InviteStatus = "pending" | "accepted" | "expired" | "revoked";
 export type MisurazioneFonte = "manuale" | "csv_bia" | "akern";
+export type MittenteMessaggio = "medico" | "paziente";
 export type PastoTipo = "colazione" | "pranzo" | "cena" | "spuntino" | "giornata";
 export type AllergiaTipo = "allergene" | "intolleranza";
+export type StatoDispositivo = "attivo" | "inattivo";
 
 export interface Database {
   public: {
@@ -332,6 +334,24 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["misurazioni"]["Row"]>;
         Relationships: [];
       };
+      messaggi: {
+        Row: {
+          id: string;
+          doctor_id: string;
+          patient_id: string;
+          mittente: MittenteMessaggio;
+          testo: string;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["messaggi"]["Row"]> & {
+          doctor_id: string;
+          patient_id: string;
+          mittente: MittenteMessaggio;
+          testo: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["messaggi"]["Row"]>;
+        Relationships: [];
+      };
       referti_bia: {
         Row: {
           id: string;
@@ -415,6 +435,72 @@ export interface Database {
           file_path: string;
         };
         Update: Partial<Database["public"]["Tables"]["piani_alimentari"]["Row"]>;
+        Relationships: [];
+      };
+      dispositivi_wearable: {
+        Row: {
+          id: string;
+          doctor_id: string;
+          patient_id: string;
+          device_id: string;
+          modello: string | null;
+          produttore: string | null;
+          stato: StatoDispositivo;
+          ultima_sincronizzazione: string | null;
+          note: string | null;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["dispositivi_wearable"]["Row"]> & {
+          doctor_id: string;
+          patient_id: string;
+          device_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["dispositivi_wearable"]["Row"]>;
+        Relationships: [];
+      };
+      attivita_giornaliera: {
+        Row: {
+          id: string;
+          doctor_id: string;
+          patient_id: string;
+          data: string;
+          passi: number | null;
+          distanza_km: number | null;
+          calorie_totali: number | null;
+          calorie_attive: number | null;
+          fonte: string;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["attivita_giornaliera"]["Row"]> & {
+          doctor_id: string;
+          patient_id: string;
+          data: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["attivita_giornaliera"]["Row"]>;
+        Relationships: [];
+      };
+      sessioni_allenamento: {
+        Row: {
+          id: string;
+          doctor_id: string;
+          patient_id: string;
+          sport_type: string | null;
+          inizio: string;
+          fine: string | null;
+          durata_minuti: number | null;
+          passi: number | null;
+          distanza_km: number | null;
+          calorie: number | null;
+          frequenza_cardiaca_media: number | null;
+          fonte: string;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["sessioni_allenamento"]["Row"]> & {
+          doctor_id: string;
+          patient_id: string;
+          inizio: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["sessioni_allenamento"]["Row"]>;
         Relationships: [];
       };
       platform_settings: {

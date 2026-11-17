@@ -63,3 +63,19 @@ export async function deleteOwnAllergia(id: string) {
   revalidatePath("/area-personale/allergie");
   revalidatePath("/area-personale");
 }
+
+export async function sendMessaggioPaziente(patientId: string, formData: FormData) {
+  const { supabase, doctorId } = await ownPatientDoctorId(patientId);
+  const testo = String(formData.get("testo") || "").trim();
+  if (!testo) return;
+
+  const { error } = await supabase.from("messaggi").insert({
+    doctor_id: doctorId,
+    patient_id: patientId,
+    mittente: "paziente",
+    testo,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath("/area-personale/messaggi");
+  revalidatePath("/area-personale");
+}
