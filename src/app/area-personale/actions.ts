@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/session";
+import { uploadDiarioFoto } from "@/lib/diario-foto";
 import type { AllergiaTipo, PastoTipo } from "@/lib/types/database";
 
 async function ownPatientDoctorId(patientId: string) {
@@ -21,21 +22,28 @@ async function ownPatientDoctorId(patientId: string) {
 
 export async function addOwnDiarioEntry(patientId: string, formData: FormData) {
   const { supabase, doctorId } = await ownPatientDoctorId(patientId);
+
+  const foto = formData.get("foto") as File | null;
+  const fotoFields = foto && foto.size > 0 ? await uploadDiarioFoto(supabase, patientId, foto) : null;
+  const contenuto = String(formData.get("contenuto") || "").trim() || fotoFields?.analisi_ai || "Foto pasto";
+
   const { error } = await supabase.from("diario_alimentare").insert({
     doctor_id: doctorId,
     patient_id: patientId,
     data: String(formData.get("data") || ""),
     pasto: formData.get("pasto") as PastoTipo,
-    contenuto: String(formData.get("contenuto") || ""),
+    contenuto,
     aderenza: String(formData.get("aderenza") || "") || null,
+    ...fotoFields,
   });
   if (error) throw new Error(error.message);
   revalidatePath("/area-personale/diario");
   revalidatePath("/area-personale");
 }
 
-export async function deleteOwnDiarioEntry(id: string) {
+export async function deleteOwnDiarioEntry(id: string, fotoPath: string | null) {
   const supabase = await createClient();
+  if (fotoPath) await supabase.storage.from("foto-diario").remove([fotoPath]);
   const { error } = await supabase.from("diario_alimentare").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/area-personale/diario");

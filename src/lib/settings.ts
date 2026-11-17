@@ -15,6 +15,7 @@ export interface ResolvedPlatformSettings {
   stripePricePro: string | null;
   stripeSecretKey: string | null;
   stripeWebhookSecret: string | null;
+  anthropicApiKey: string | null;
 }
 
 /**
@@ -40,6 +41,7 @@ export async function getPlatformSettings(): Promise<ResolvedPlatformSettings> {
     stripeWebhookSecret: row?.stripe_webhook_secret_encrypted
       ? decryptSecret(row.stripe_webhook_secret_encrypted)
       : process.env.STRIPE_WEBHOOK_SECRET || null,
+    anthropicApiKey: row?.anthropic_api_key_encrypted ? decryptSecret(row.anthropic_api_key_encrypted) : process.env.ANTHROPIC_API_KEY || null,
   };
 }
 
@@ -54,6 +56,7 @@ export interface PlatformSettingsUpdate {
   stripePricePro?: string;
   stripeSecretKey?: string;
   stripeWebhookSecret?: string;
+  anthropicApiKey?: string;
 }
 
 /**
@@ -75,6 +78,7 @@ export async function updatePlatformSettings(update: PlatformSettingsUpdate) {
   if (update.brevoApiKey) patch.brevo_api_key_encrypted = encryptSecret(update.brevoApiKey);
   if (update.stripeSecretKey) patch.stripe_secret_key_encrypted = encryptSecret(update.stripeSecretKey);
   if (update.stripeWebhookSecret) patch.stripe_webhook_secret_encrypted = encryptSecret(update.stripeWebhookSecret);
+  if (update.anthropicApiKey) patch.anthropic_api_key_encrypted = encryptSecret(update.anthropicApiKey);
 
   const { error } = await admin.from("platform_settings").update(patch).eq("id", true);
   if (error) throw new Error(error.message);

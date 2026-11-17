@@ -381,6 +381,12 @@ export interface Database {
           contenuto: string;
           aderenza: string | null;
           note: string | null;
+          foto_path: string | null;
+          analisi_ai: string | null;
+          calorie_stimate: number | null;
+          proteine_g: number | null;
+          carboidrati_g: number | null;
+          grassi_g: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -516,6 +522,7 @@ export interface Database {
           stripe_price_pro: string | null;
           stripe_secret_key_encrypted: string | null;
           stripe_webhook_secret_encrypted: string | null;
+          anthropic_api_key_encrypted: string | null;
           updated_at: string;
         };
         Insert: Partial<Database["public"]["Tables"]["platform_settings"]["Row"]>;

@@ -26,6 +26,8 @@ import {
   sendMessaggioMedico,
   addAttivitaGiornaliera,
   deleteAttivitaGiornaliera,
+  addPatientTag,
+  removePatientTag,
 } from "./actions";
 
 const PASTO_LABEL: Record<string, string> = {
@@ -81,6 +83,16 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
     })
   );
 
+  const diarioFotoUrls = new Map<string, string>();
+  await Promise.all(
+    (diario || [])
+      .filter((d) => d.foto_path)
+      .map(async (d) => {
+        const { data } = await supabase.storage.from("foto-diario").createSignedUrl(d.foto_path as string, 3600);
+        if (data?.signedUrl) diarioFotoUrls.set(d.id, data.signedUrl);
+      })
+  );
+
   const misurazioniFileUrls = new Map<string, string>();
   await Promise.all(
     (misurazioni || [])
@@ -114,6 +126,31 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
           {patient.email}
           {patient.phone ? ` · ${patient.phone}` : ""}
         </p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {(patient.tags || []).map((tag) => (
+            <form key={tag} action={removePatientTag.bind(null, id, tag)} className="inline">
+              <button className="flex items-center gap-1 rounded-full bg-brand-light px-3 py-1 text-xs font-medium text-brand-dark hover:bg-brand/20">
+                {tag} <span aria-hidden>×</span>
+              </button>
+            </form>
+          ))}
+          {!(patient.tags || []).includes("GLP-1") && (
+            <form action={addPatientTag.bind(null, id)} className="inline">
+              <input type="hidden" name="tag" value="GLP-1" />
+              <button className="rounded-full border border-dashed border-border px-3 py-1 text-xs text-secondary hover:border-brand hover:text-brand">
+                + Percorso GLP-1
+              </button>
+            </form>
+          )}
+          <form action={addPatientTag.bind(null, id)} className="inline-flex items-center gap-1">
+            <input
+              name="tag"
+              placeholder="Altro tag…"
+              className="w-28 rounded-full border border-border px-3 py-1 text-xs focus:border-brand focus:outline-none"
+            />
+            <button className="rounded-full border border-border px-2 py-1 text-xs text-secondary hover:bg-surface-hover">+</button>
+          </form>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-2">
@@ -365,18 +402,37 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
 
       <section>
         <h2 className="font-semibold">Diario alimentare</h2>
+        {(patient.tags || []).includes("GLP-1") && (
+          <p className="mt-2 rounded-card border border-border border-l-4 border-l-teal bg-brand-light px-4 py-2 text-xs text-brand-dark">
+            Percorso GLP-1: monitora apporto proteico, sazietà precoce/nausea e idratazione nelle voci del paziente.
+          </p>
+        )}
         <div className="mt-3 grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-2">
             {(diario || []).map((d) => (
               <div key={d.id} className="flex items-start justify-between gap-3 rounded-card border border-border border-l-4 border-l-teal bg-surface p-4 shadow-card">
-                <div>
-                  <p className="font-medium">
-                    {new Date(d.data).toLocaleDateString("it-IT")} · {PASTO_LABEL[d.pasto]}
-                  </p>
-                  <p className="text-sm text-secondary">{d.contenuto}</p>
-                  {d.aderenza && <p className="mt-1 text-xs text-muted">Aderenza: {d.aderenza}</p>}
+                <div className="flex gap-3">
+                  {diarioFotoUrls.has(d.id) && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={diarioFotoUrls.get(d.id)} alt="Foto del pasto" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
+                  )}
+                  <div>
+                    <p className="font-medium">
+                      {new Date(d.data).toLocaleDateString("it-IT")} · {PASTO_LABEL[d.pasto]}
+                    </p>
+                    <p className="text-sm text-secondary">{d.contenuto}</p>
+                    {d.aderenza && <p className="mt-1 text-xs text-muted">Aderenza: {d.aderenza}</p>}
+                    {(d.calorie_stimate != null || d.proteine_g != null) && (
+                      <p className="mt-1 text-xs text-muted">
+                        Stima AI: {d.calorie_stimate != null ? `${d.calorie_stimate} kcal` : ""}
+                        {d.proteine_g != null ? ` · ${d.proteine_g}g proteine` : ""}
+                        {d.carboidrati_g != null ? ` · ${d.carboidrati_g}g carb.` : ""}
+                        {d.grassi_g != null ? ` · ${d.grassi_g}g grassi` : ""}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <EntryDeleteButton action={deleteDiarioEntry.bind(null, d.id, id)} />
+                <EntryDeleteButton action={deleteDiarioEntry.bind(null, d.id, id, d.foto_path)} />
               </div>
             ))}
             {(!diario || diario.length === 0) && (
@@ -400,7 +456,12 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
               <option value="cena">Cena</option>
               <option value="spuntino">Spuntino</option>
             </select>
-            <textarea name="contenuto" required placeholder="Cosa è stato mangiato" rows={2} className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
+            <textarea name="contenuto" placeholder="Cosa è stato mangiato (opzionale se carichi una foto)" rows={2} className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
+            <div>
+              <label className="block text-sm font-medium">Foto del pasto (opzionale)</label>
+              <input name="foto" type="file" accept="image/*" className="mt-1 text-sm" />
+              <p className="mt-1 text-xs text-muted">Se carichi una foto, l&apos;AI stima automaticamente calorie e macronutrienti.</p>
+            </div>
             <input name="aderenza" placeholder="Aderenza (es. buona, parziale)" className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
             <textarea name="note" placeholder="Note" rows={2} className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
             <button className="w-full rounded-button bg-brand py-2 text-sm font-semibold text-white hover:bg-brand-dark">Aggiungi voce</button>

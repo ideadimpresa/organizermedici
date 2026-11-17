@@ -3,6 +3,8 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { EntryDeleteButton } from "@/components/entry-delete-button";
 import { addOwnDiarioEntry, deleteOwnDiarioEntry } from "../actions";
 
+const FOTO_BUCKET = "foto-diario";
+
 const PASTO_LABEL: Record<string, string> = {
   colazione: "Colazione",
   pranzo: "Pranzo",
@@ -15,13 +17,24 @@ export default async function PatientDiaryPage() {
   const user = await getCurrentUser();
   const supabase = await createClient();
 
-  const { data: patientRows } = await supabase.from("patients").select("id").eq("profile_id", user?.id ?? "");
+  const { data: patientRows } = await supabase.from("patients").select("id, tags").eq("profile_id", user?.id ?? "");
   const patientIds = (patientRows || []).map((p) => p.id);
   const primaryPatientId = patientIds[0];
+  const isGlp1 = (patientRows || []).some((p) => (p.tags || []).includes("GLP-1"));
 
   const { data: diario } = patientIds.length
     ? await supabase.from("diario_alimentare").select("*").in("patient_id", patientIds).order("data", { ascending: false }).limit(60)
     : { data: [] };
+
+  const fotoUrls = new Map<string, string>();
+  await Promise.all(
+    (diario || [])
+      .filter((d) => d.foto_path)
+      .map(async (d) => {
+        const { data } = await supabase.storage.from(FOTO_BUCKET).createSignedUrl(d.foto_path as string, 3600);
+        if (data?.signedUrl) fotoUrls.set(d.id, data.signedUrl);
+      })
+  );
 
   return (
     <div className="mx-auto max-w-2xl space-y-8 pb-10">
@@ -29,6 +42,17 @@ export default async function PatientDiaryPage() {
         <h1 className="text-2xl font-bold">Diario alimentare</h1>
         <p className="mt-1 text-secondary">Il tuo diario personale: annota come è andata la giornata a livello nutrizionale.</p>
       </div>
+
+      {isGlp1 && (
+        <div className="rounded-card border border-border border-l-4 border-l-teal bg-brand-light p-4 text-sm text-brand-dark">
+          <p className="font-semibold">Percorso GLP-1: qualche promemoria per oggi</p>
+          <ul className="mt-1 list-inside list-disc space-y-0.5">
+            <li>Hai raggiunto le proteine necessarie per preservare la massa magra?</li>
+            <li>Hai notato sazietà precoce, nausea o altri effetti da segnalare al tuo nutrizionista?</li>
+            <li>Hai bevuto a sufficienza nel corso della giornata?</li>
+          </ul>
+        </div>
+      )}
 
       {primaryPatientId && (
         <form action={addOwnDiarioEntry.bind(null, primaryPatientId)} className="space-y-3 rounded-card border border-border border-l-4 border-l-teal bg-surface p-5 shadow-card">
@@ -63,6 +87,30 @@ export default async function PatientDiaryPage() {
       )}
 
       {primaryPatientId && (
+        <form action={addOwnDiarioEntry.bind(null, primaryPatientId)} className="space-y-3 rounded-card border border-border border-l-4 border-l-teal bg-surface p-5 shadow-card">
+          <h3 className="font-semibold">Scatta o carica la foto del pasto</h3>
+          <p className="text-sm text-secondary">L&apos;AI stima automaticamente calorie e macronutrienti dalla foto — niente da scrivere.</p>
+          <div className="flex gap-2">
+            <input
+              name="data"
+              type="date"
+              required
+              defaultValue={new Date().toISOString().slice(0, 10)}
+              className="w-1/2 rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none"
+            />
+            <select name="pasto" required className="w-1/2 rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none">
+              <option value="colazione">Colazione</option>
+              <option value="pranzo">Pranzo</option>
+              <option value="cena">Cena</option>
+              <option value="spuntino">Spuntino</option>
+            </select>
+          </div>
+          <input name="foto" type="file" accept="image/*" capture="environment" required className="text-sm" />
+          <button className="w-full rounded-button bg-brand py-2.5 text-sm font-semibold text-white hover:bg-brand-dark">Salva foto pasto</button>
+        </form>
+      )}
+
+      {primaryPatientId && (
         <form action={addOwnDiarioEntry.bind(null, primaryPatientId)} className="space-y-3 rounded-card border border-border bg-surface p-5 shadow-card">
           <h3 className="text-sm font-semibold">Aggiungi un pasto specifico (opzionale)</h3>
           <div className="flex gap-2">
@@ -92,15 +140,29 @@ export default async function PatientDiaryPage() {
             className={`rounded-card border border-border p-4 shadow-card ${d.pasto === "giornata" ? "border-l-4 border-l-teal bg-surface" : "bg-background"}`}
           >
             <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="font-medium">
-                  {new Date(d.data).toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}
-                  {d.pasto !== "giornata" && <span className="ml-2 text-xs font-normal text-secondary">{PASTO_LABEL[d.pasto]}</span>}
-                </p>
-                <p className="mt-1 whitespace-pre-line text-sm text-foreground">{d.contenuto}</p>
-                {d.aderenza && <p className="mt-2 inline-block rounded-full bg-brand-light px-3 py-1 text-xs text-brand-dark">Aderenza: {d.aderenza}</p>}
+              <div className="flex gap-3">
+                {fotoUrls.has(d.id) && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={fotoUrls.get(d.id)} alt="Foto del pasto" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
+                )}
+                <div>
+                  <p className="font-medium">
+                    {new Date(d.data).toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}
+                    {d.pasto !== "giornata" && <span className="ml-2 text-xs font-normal text-secondary">{PASTO_LABEL[d.pasto]}</span>}
+                  </p>
+                  <p className="mt-1 whitespace-pre-line text-sm text-foreground">{d.contenuto}</p>
+                  {d.aderenza && <p className="mt-2 inline-block rounded-full bg-brand-light px-3 py-1 text-xs text-brand-dark">Aderenza: {d.aderenza}</p>}
+                  {(d.calorie_stimate != null || d.proteine_g != null) && (
+                    <p className="mt-1 text-xs text-muted">
+                      Stima AI: {d.calorie_stimate != null ? `${d.calorie_stimate} kcal` : ""}
+                      {d.proteine_g != null ? ` · ${d.proteine_g}g proteine` : ""}
+                      {d.carboidrati_g != null ? ` · ${d.carboidrati_g}g carb.` : ""}
+                      {d.grassi_g != null ? ` · ${d.grassi_g}g grassi` : ""}
+                    </p>
+                  )}
+                </div>
               </div>
-              <EntryDeleteButton action={deleteOwnDiarioEntry.bind(null, d.id)} />
+              <EntryDeleteButton action={deleteOwnDiarioEntry.bind(null, d.id, d.foto_path)} />
             </div>
           </div>
         ))}

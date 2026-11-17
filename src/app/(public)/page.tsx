@@ -45,6 +45,27 @@ const FEATURES = [
       </svg>
     ),
   },
+  {
+    title: "Percorso GLP-1 con coaching ibrido",
+    description:
+      "Monitora in automatico aderenza, sazietà e preservazione della massa magra dei pazienti in terapia GLP-1, con un'AI che affianca — senza sostituire — il tuo lavoro clinico.",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 text-white">
+        <path d="M12 21s-7-4.5-7-10a4.5 4.5 0 0 1 7-3.7A4.5 4.5 0 0 1 19 11c0 5.5-7 10-7 10Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    title: "Diario fotografico con AI",
+    description: "Il paziente scatta la foto del pasto: calorie e macronutrienti vengono stimati automaticamente, senza dover scrivere nulla.",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 text-white">
+        <rect x="3" y="7" width="18" height="13" rx="2" stroke="currentColor" strokeWidth="1.8" />
+        <circle cx="12" cy="13.5" r="3.2" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M8 7l1.2-2.5h5.6L16 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
 ];
 
 const STEPS = [
@@ -62,11 +83,12 @@ export default function HomePage() {
             La piattaforma per i professionisti della nutrizione
           </span>
           <h1 className="mx-auto mt-5 max-w-3xl text-4xl font-bold text-white sm:text-5xl">
-            Agenda, pazienti, pagamenti e contenuti. Un unico studio digitale.
+            Agenda, pazienti e coaching nutrizionale ibrido medico+AI. Un unico studio digitale.
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-white/70">
-            VisitaUp è il software gestionale pensato per nutrizionisti e biologi nutrizionisti: meno tempo
-            organizzativo, più tempo per i tuoi pazienti.
+            VisitaUp è il software gestionale pensato per nutrizionisti e biologi nutrizionisti, con un
+            supporto dedicato ai percorsi GLP-1: diario fotografico con stima AI, messaggistica diretta
+            e monitoraggio dell&apos;aderenza — meno tempo organizzativo, più tempo per i tuoi pazienti.
           </p>
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
             <Link

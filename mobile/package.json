@@ -1,0 +1,21 @@
+{
+  "name": "visitaup-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Capacitor shell (iOS/Android) wrapping the VisitaUp webapp, adding native BLE access for the VisitaUp Band sync.",
+  "scripts": {
+    "sync": "cap sync",
+    "open:ios": "cap open ios",
+    "open:android": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/core": "^7.5.0",
+    "@capacitor-community/bluetooth-le": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^7.5.0",
+    "@capacitor/cli": "^7.5.0",
+    "@capacitor/ios": "^7.5.0",
+    "typescript": "^5"
+  }
+}

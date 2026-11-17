@@ -68,3 +68,13 @@ Vedi `.env.example` per l'elenco completo. Le principali:
 - Le videoconsulenze usano link **Jitsi Meet** generati automaticamente (nessuna API key richiesta). Sostituibile in futuro con Zoom/Google Meet via OAuth per-dottore.
 - La pubblicazione social richiede che ogni dottore colleghi manualmente Page ID/Access Token da `/dottore/articoli` (richiede una Meta App con permessi `pages_manage_posts` e `instagram_content_publish`).
 - I pagamenti Stripe sono già cablati per: caparra/pagamento visita (checkout one-off) e abbonamento SaaS dottore (checkout subscription).
+- Il diario alimentare supporta foto dei pasti con stima automatica di calorie/macro via AI (Anthropic, chiave configurabile da `/admin/impostazioni`).
+
+## App mobile (VisitaUp Band)
+
+`mobile/` contiene lo scaffold Capacitor (iOS/Android) che carica questa stessa
+webapp in una WebView nativa, aggiungendo l'accesso Bluetooth (BLE) richiesto
+per sincronizzare il braccialetto VisitaUp Band — necessario soprattutto su
+iOS, dove Web Bluetooth non è disponibile in nessun browser. Vedi
+`mobile/README.md` per i dettagli e lo stato (bloccato sulla ricezione
+dell'SDK del fornitore del braccialetto).

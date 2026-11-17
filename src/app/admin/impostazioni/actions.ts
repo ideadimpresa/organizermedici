@@ -24,6 +24,7 @@ export async function saveSettings(formData: FormData) {
     stripePricePro: str("stripe_price_pro"),
     stripeSecretKey: str("stripe_secret_key"),
     stripeWebhookSecret: str("stripe_webhook_secret"),
+    anthropicApiKey: str("anthropic_api_key"),
   });
 
   redirect("/admin/impostazioni?saved=1");

@@ -14,7 +14,7 @@ export default async function PatientsPage({
 
   let query = supabase
     .from("patients")
-    .select("id, full_name, email, phone, source, created_at")
+    .select("id, full_name, email, phone, source, tags, created_at")
     .eq("doctor_id", user?.doctorId ?? "")
     .order("created_at", { ascending: false });
 
@@ -58,6 +58,11 @@ export default async function PatientsPage({
                     <Link href={`/dottore/pazienti/${p.id}`} className="text-brand hover:underline">
                       {p.full_name}
                     </Link>
+                    {(p.tags || []).map((tag) => (
+                      <span key={tag} className="ml-2 inline-block rounded-full bg-brand-light px-2 py-0.5 text-xs font-medium text-brand-dark">
+                        {tag}
+                      </span>
+                    ))}
                   </td>
                   <td className="px-4 py-3 text-secondary">
                     {p.email}

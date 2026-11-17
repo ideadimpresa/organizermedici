@@ -136,6 +136,27 @@ export default async function AdminSettingsPage({
           </div>
         </section>
 
+        <section className="rounded-card border border-border border-l-4 border-l-teal bg-surface shadow-card p-6">
+          <h2 className="font-semibold">Intelligenza artificiale</h2>
+          <p className="mt-1 text-sm text-secondary">
+            Usata per analizzare le foto dei pasti nel diario alimentare e stimare i valori nutrizionali.
+          </p>
+          <div className="mt-4 space-y-3">
+            <div>
+              <label className="block text-sm font-medium">Anthropic API key</label>
+              <input
+                name="anthropic_api_key"
+                type="password"
+                placeholder={configuredLabel(!!settings?.anthropic_api_key_encrypted)}
+                className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none"
+              />
+              <p className="mt-1 text-xs text-muted">
+                Senza una chiave configurata, le foto del diario vengono comunque salvate ma senza stima automatica dei valori nutrizionali.
+              </p>
+            </div>
+          </div>
+        </section>
+
         <button className="rounded-button bg-brand px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-dark">
           Salva impostazioni
         </button>

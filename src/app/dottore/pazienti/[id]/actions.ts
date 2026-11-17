@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { extractPdfText } from "@/lib/pdf";
 import { renderPdfToImages } from "@/lib/pdf-image";
+import { uploadDiarioFoto } from "@/lib/diario-foto";
 import type { AllergiaTipo, PastoTipo } from "@/lib/types/database";
 
 const DOCS_BUCKET = "documenti-pazienti";
@@ -29,6 +30,32 @@ async function requireDoctor() {
   const user = await getCurrentUser();
   if (!user?.doctorId) throw new Error("Non autorizzato");
   return user.doctorId;
+}
+
+async function currentPatientTags(supabase: Awaited<ReturnType<typeof createClient>>, doctorId: string, patientId: string) {
+  const { data: patient } = await supabase.from("patients").select("tags").eq("id", patientId).eq("doctor_id", doctorId).single();
+  if (!patient) throw new Error("Paziente non trovato");
+  return patient.tags || [];
+}
+
+export async function addPatientTag(patientId: string, formData: FormData) {
+  const doctorId = await requireDoctor();
+  const supabase = await createClient();
+  const tag = String(formData.get("tag") || "").trim();
+  if (!tag) return;
+  const tags = Array.from(new Set([...(await currentPatientTags(supabase, doctorId, patientId)), tag]));
+  const { error } = await supabase.from("patients").update({ tags }).eq("id", patientId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/dottore/pazienti/${patientId}`);
+}
+
+export async function removePatientTag(patientId: string, tag: string) {
+  const doctorId = await requireDoctor();
+  const supabase = await createClient();
+  const tags = (await currentPatientTags(supabase, doctorId, patientId)).filter((t) => t !== tag);
+  const { error } = await supabase.from("patients").update({ tags }).eq("id", patientId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/dottore/pazienti/${patientId}`);
 }
 
 function readNumberOrNull(formData: FormData, key: string) {
@@ -101,22 +128,29 @@ export async function deleteAttivitaGiornaliera(id: string, patientId: string) {
 export async function addDiarioEntry(patientId: string, formData: FormData) {
   const doctorId = await requireDoctor();
   const supabase = await createClient();
+
+  const foto = formData.get("foto") as File | null;
+  const fotoFields = foto && foto.size > 0 ? await uploadDiarioFoto(supabase, patientId, foto) : null;
+  const contenuto = String(formData.get("contenuto") || "").trim() || fotoFields?.analisi_ai || "Foto pasto";
+
   const { error } = await supabase.from("diario_alimentare").insert({
     doctor_id: doctorId,
     patient_id: patientId,
     data: String(formData.get("data") || ""),
     pasto: formData.get("pasto") as PastoTipo,
-    contenuto: String(formData.get("contenuto") || ""),
+    contenuto,
     aderenza: String(formData.get("aderenza") || "") || null,
     note: String(formData.get("note") || "") || null,
+    ...fotoFields,
   });
   if (error) throw new Error(error.message);
   revalidatePath(`/dottore/pazienti/${patientId}`);
 }
 
-export async function deleteDiarioEntry(id: string, patientId: string) {
+export async function deleteDiarioEntry(id: string, patientId: string, fotoPath: string | null) {
   await requireDoctor();
   const supabase = await createClient();
+  if (fotoPath) await supabase.storage.from("foto-diario").remove([fotoPath]);
   const { error } = await supabase.from("diario_alimentare").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath(`/dottore/pazienti/${patientId}`);
