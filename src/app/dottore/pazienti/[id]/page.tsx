@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { EntryDeleteButton } from "@/components/entry-delete-button";
+import { PhotoInput } from "@/components/photo-input";
 import { WeightTrendChart } from "@/components/weight-trend-chart";
 import { BiaValuesForm } from "@/components/bia-values-form";
 import { RefertoBiaCard } from "@/components/referto-bia-card";
@@ -459,7 +460,9 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
             <textarea name="contenuto" placeholder="Cosa è stato mangiato (opzionale se carichi una foto)" rows={2} className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />
             <div>
               <label className="block text-sm font-medium">Foto del pasto (opzionale)</label>
-              <input name="foto" type="file" accept="image/*" className="mt-1 text-sm" />
+              <div className="mt-1">
+                <PhotoInput name="foto" />
+              </div>
               <p className="mt-1 text-xs text-muted">Se carichi una foto, l&apos;AI stima automaticamente calorie e macronutrienti.</p>
             </div>
             <input name="aderenza" placeholder="Aderenza (es. buona, parziale)" className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none" />

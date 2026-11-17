@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { EntryDeleteButton } from "@/components/entry-delete-button";
+import { PhotoInput } from "@/components/photo-input";
 import { addOwnDiarioEntry, deleteOwnDiarioEntry } from "../actions";
 
 const FOTO_BUCKET = "foto-diario";
@@ -105,7 +106,7 @@ export default async function PatientDiaryPage() {
               <option value="spuntino">Spuntino</option>
             </select>
           </div>
-          <input name="foto" type="file" accept="image/*" capture="environment" required className="text-sm" />
+          <PhotoInput name="foto" required captureEnvironment />
           <button className="w-full rounded-button bg-brand py-2.5 text-sm font-semibold text-white hover:bg-brand-dark">Salva foto pasto</button>
         </form>
       )}
