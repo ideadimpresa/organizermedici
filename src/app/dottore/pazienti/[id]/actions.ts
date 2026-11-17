@@ -129,19 +129,23 @@ export async function addDiarioEntry(patientId: string, formData: FormData) {
   const doctorId = await requireDoctor();
   const supabase = await createClient();
 
+  const data = String(formData.get("data") || "");
   const foto = formData.get("foto") as File | null;
-  const fotoFields = foto && foto.size > 0 ? await uploadDiarioFoto(supabase, patientId, foto) : null;
-  const contenuto = String(formData.get("contenuto") || "").trim() || fotoFields?.analisi_ai || "Foto pasto";
+  const fotoResult = foto && foto.size > 0 ? await uploadDiarioFoto(supabase, patientId, data, foto) : null;
+  const contenuto =
+    String(formData.get("contenuto") || "").trim() ||
+    fotoResult?.fields.analisi_ai ||
+    (fotoResult?.limitReached ? "Foto pasto (limite di 5 analisi AI al giorno raggiunto — foto salvata senza stima nutrizionale)" : "Foto pasto");
 
   const { error } = await supabase.from("diario_alimentare").insert({
     doctor_id: doctorId,
     patient_id: patientId,
-    data: String(formData.get("data") || ""),
+    data,
     pasto: formData.get("pasto") as PastoTipo,
     contenuto,
     aderenza: String(formData.get("aderenza") || "") || null,
     note: String(formData.get("note") || "") || null,
-    ...fotoFields,
+    ...fotoResult?.fields,
   });
   if (error) throw new Error(error.message);
   revalidatePath(`/dottore/pazienti/${patientId}`);
